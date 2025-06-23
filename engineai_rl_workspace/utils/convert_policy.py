@@ -3,17 +3,17 @@ import torch
 import copy
 
 
-def convert_nn_to_onnx(model, path, name, input_dim_infos, output_dim_infos):
+def convert_nn_to_onnx(model, path, name):
     os.makedirs(path, exist_ok=True)
     path = os.path.join(path, name + ".onnx")
     model.eval()
 
     dummy_inputs = tuple(
-        torch.randn(input_dim) for _, input_dim in input_dim_infos.items()
+        torch.randn(input_dim)
+        for _, input_dim in model.network_dicts[0]["forward_input_dims"].items()
     )
-    input_names = list(input_dim_infos.keys())
-    output_names = list(output_dim_infos.keys())
-
+    input_names = model.network_dicts[0]["forward_inputs"]
+    output_names = model.network_dicts[-1]["forward_outputs"]
     torch.onnx.export(
         model,
         dummy_inputs,

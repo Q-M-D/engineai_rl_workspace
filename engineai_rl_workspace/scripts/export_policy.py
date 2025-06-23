@@ -1,4 +1,5 @@
-import os, asyncio, json
+import os, asyncio
+from collections import OrderedDict
 
 from engineai_rl_workspace.utils import (
     get_args,
@@ -19,6 +20,7 @@ from engineai_rl_workspace import (
 )
 from engineai_rl_lib.class_operations import class_to_dict
 from engineai_rl_lib.redis_lock import RedisLock
+from engineai_rl_lib.networks import CombinedNetworks
 from engineai_rl.modules.networks import *
 
 import torch
@@ -60,6 +62,7 @@ async def export_policy(args):
     loaded_dict = torch.load(load_checkpoint, map_location=torch.device(args.rl_device))
     inference_network_names = algo_cfg.networks.inference
     input_sizes = loaded_dict["infos"]["input_sizes"]
+    inference_networks = OrderedDict()
     for inference_network_name in inference_network_names:
         inference_network_cfg = class_to_dict(
             eval(f"algo_cfg.networks.{inference_network_name}")
@@ -127,6 +130,90 @@ async def export_policy(args):
                     raise ValueError(
                         f"Network output type {network_output_type} not supported"
                     )
+        if "forward_inputs" in inference_network_cfg:
+            forward_inputs = inference_network_cfg.pop("forward_inputs")
+        else:
+            forward_inputs = None
+        if "forward_input_dims_infos" in inference_network_cfg:
+            forward_input_dims_infos = inference_network_cfg.pop(
+                "forward_input_dims_infos"
+            )
+            forward_input_dims = {}
+            for (
+                forward_input_name,
+                forward_input_type,
+            ) in forward_input_dims_infos.items():
+                if isinstance(forward_input_type, list):
+                    forward_input_dims[forward_input_type] = 0
+                    for forward_input_subtype in forward_input_type:
+                        if isinstance(forward_input_subtype, int):
+                            forward_input_dims[
+                                forward_input_name
+                            ] += forward_input_subtype
+                        elif forward_input_subtype in input_dim_infos:
+                            forward_input_dims[forward_input_name] += input_dim_infos[
+                                forward_input_subtype
+                            ]
+                        else:
+                            raise ValueError(
+                                f"Forward input type {forward_input_subtype} not supported"
+                            )
+                else:
+                    if isinstance(forward_input_type, int):
+                        forward_input_dims[forward_input_name] = forward_input_type
+                    elif forward_input_type in input_dim_infos:
+                        forward_input_dims[forward_input_name] = input_dim_infos[
+                            forward_input_type
+                        ]
+                    else:
+                        raise ValueError(
+                            f"Forward input type {forward_input_type} not supported"
+                        )
+        else:
+            forward_input_dims = None
+
+        if "forward_outputs" in inference_network_cfg:
+            forward_outputs = inference_network_cfg.pop("forward_outputs")
+        else:
+            forward_outputs = None
+        if "forward_output_dims_infos" in inference_network_cfg:
+            forward_output_dims_infos = inference_network_cfg.pop(
+                "forward_output_dims_infos"
+            )
+            forward_output_dims = {}
+            for (
+                forward_output_name,
+                forward_output_type,
+            ) in forward_output_dims_infos.items():
+                if isinstance(forward_output_type, list):
+                    forward_output_dims[forward_output_name] = 0
+                    for forward_output_subtype in forward_output_type:
+                        if forward_output_subtype in network_output_infos:
+                            forward_output_dims[
+                                forward_output_name
+                            ] += output_dim_infos[forward_output_subtype]
+                        elif isinstance(forward_output_subtype, int):
+                            forward_output_dims[
+                                forward_output_name
+                            ] += forward_output_subtype
+                        else:
+                            raise ValueError(
+                                f"Forward output type {forward_output_subtype} not supported"
+                            )
+                else:
+                    if forward_output_type in network_output_infos:
+                        forward_output_dims[forward_output_name] = output_dim_infos[
+                            forward_output_type
+                        ]
+                    elif isinstance(forward_output_type, int):
+                        forward_output_dims[forward_output_name] = forward_output_type
+                    else:
+                        raise ValueError(
+                            f"Forward output type {forward_output_type} not supported"
+                        )
+        else:
+            forward_output_dims = None
+
         if inference_network_cfg.get("normalizer_class_name", False):
             normalizer_class = eval(inference_network_cfg.pop("normalizer_class_name"))
             normalizer = normalizer_class(
@@ -144,34 +231,34 @@ async def export_policy(args):
         inference_network.load_state_dict(
             loaded_dict["model_state_dict"][inference_network_name]
         )
-        convert_nn_to_onnx(
-            inference_network,
-            path,
-            args.exp_name + "_" + args.load_run + "_" + inference_network_class_name,
-            input_dim_infos,
-            output_dim_infos,
-        )
+        inference_networks[inference_network_name] = {
+            "network": inference_network,
+            "input_dim_infos": input_dim_infos,
+            "output_dim_infos": output_dim_infos,
+            "forward_input_dims": forward_input_dims,
+            "forward_inputs": forward_inputs,
+            "forward_output_dims": forward_output_dims,
+            "forward_outputs": forward_outputs,
+        }
+    network_list = [
+        inference_network for inference_network in inference_networks.values()
+    ]
+    combined_networks = CombinedNetworks(network_list)
 
-        convert_onnx_to_mnn(
-            os.path.join(
-                path,
-                args.exp_name
-                + "_"
-                + args.load_run
-                + "_"
-                + inference_network_class_name
-                + ".onnx",
-            ),
-            os.path.join(
-                path,
-                args.exp_name
-                + "_"
-                + args.load_run
-                + "_"
-                + inference_network_class_name
-                + ".mnn",
-            ),
-        )
+    convert_nn_to_onnx(
+        combined_networks, path, args.exp_name + "_" + args.load_run + "_policy"
+    )
+
+    convert_onnx_to_mnn(
+        os.path.join(
+            path,
+            args.exp_name + "_" + args.load_run + "_policy" + ".onnx",
+        ),
+        os.path.join(
+            path,
+            args.exp_name + "_" + args.load_run + "_policy" + ".mnn",
+        ),
+    )
 
 
 if __name__ == "__main__":

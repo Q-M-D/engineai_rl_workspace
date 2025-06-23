@@ -34,6 +34,8 @@ class ConfigAlgoBase(BaseConfig):
             # when it's input_name, the size is the corresponding input, when it's an int, the size is the int
             input_infos = {"num_input_dim": "actor"}
             output_infos = {"num_output_dim": "action"}
+            forward_inputs = ["obs"]
+            forward_input_dims_infos = {"obs": "num_input_dim"}
             # other network args
             hidden_dims = [512, 256, 128]
             # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid

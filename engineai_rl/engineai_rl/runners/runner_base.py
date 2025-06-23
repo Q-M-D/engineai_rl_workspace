@@ -82,6 +82,14 @@ class RunnerBase(ABC):
         training_networks = self.network_cfg.pop("training")
         inference_networks = self.network_cfg.pop("inference")
         for network in self.network_cfg:
+            if "forward_inputs" in self.network_cfg[network]:
+                self.network_cfg[network].pop("forward_inputs")
+            if "forward_outputs" in self.network_cfg[network]:
+                self.network_cfg[network].pop("forward_outputs")
+            if "forward_input_dims_infos" in self.network_cfg[network]:
+                self.network_cfg[network].pop("forward_input_dims_infos")
+            if "forward_output_dims_infos" in self.network_cfg[network]:
+                self.network_cfg[network].pop("forward_output_dims_infos")
             network_class = eval(self.network_cfg[network].pop("class_name"))
             network_input_infos = self.network_cfg[network].pop("input_infos")
             input_dim_infos = {}
