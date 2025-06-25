@@ -12,15 +12,13 @@ def convert_nn_to_onnx(model, path, name):
         torch.randn(input_dim)
         for _, input_dim in model.network_dicts[0]["forward_input_dims"].items()
     )
-    input_names = model.network_dicts[0]["forward_inputs"]
-    output_names = model.network_dicts[-1]["forward_outputs"]
+    if len(dummy_inputs) > 1:
+        dummy_inputs = torch.cat(dummy_inputs, dim=-1)
     torch.onnx.export(
         model,
         dummy_inputs,
         path,
         verbose=True,
-        input_names=input_names,
-        output_names=output_names,
         export_params=True,
         opset_version=13,
     )

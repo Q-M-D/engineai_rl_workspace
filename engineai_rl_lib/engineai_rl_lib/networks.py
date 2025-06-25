@@ -7,7 +7,7 @@ class CombinedNetworks(nn.Module):
         self.network_dicts = networks_dict
         self.networks = nn.ModuleList([network["network"] for network in networks_dict])
 
-    def forward(self, *inputs):
+    def forward(self, inputs):
         outputs = []
         output_names = []
         last_input_names = []
@@ -22,6 +22,18 @@ class CombinedNetworks(nn.Module):
                     inputs,
                     outputs,
                 )
+            else:
+                separated_inputs = []
+                idx = 0
+                for input_name in network_dict["forward_inputs"]:
+                    separated_inputs.append(
+                        inputs[
+                            idx : idx + network_dict["forward_input_dims"][input_name]
+                        ]
+                    )
+                    idx += network_dict["forward_input_dims"][input_name]
+                inputs = separated_inputs
+
             outputs = network(*inputs)
             output_names = network_dict["forward_outputs"]
             last_input_names = network_dict["forward_inputs"]
