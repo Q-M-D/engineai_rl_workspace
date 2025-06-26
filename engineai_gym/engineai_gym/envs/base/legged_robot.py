@@ -357,10 +357,27 @@ class LeggedRobot(EnvBase):
                             self.torque_limits[
                                 i
                             ] *= self.cfg.safety.torque_hard_limit_multi[dof_type]
+        if isinstance(self.cfg.asset.min_joint_armature, float):
+            self.min_joint_armature[:] = self.cfg.asset.min_joint_armature
+        elif isinstance(self.cfg.asset.min_joint_armature, dict):
+            for i in range(len(props)):
+                for dof_type in self.cfg.asset.min_joint_armature:
+                    if dof_type in self.dof_names[i]:
+                        self.min_joint_armature[i] = self.cfg.asset.min_joint_armature[
+                            dof_type
+                        ]
+        else:
+            raise ValueError(
+                f"The type of min_joint_armature: {type(self.cfg.asset.min_joint_armature)} is not supported"
+            )
+
         for i in range(len(props)):
             for dof_type in self.cfg.asset.joint_armature:
                 if dof_type in self.dof_names[i]:
-                    props["armature"][i] = self.cfg.asset.joint_armature[dof_type]
+                    props["armature"][i] = max(
+                        self.cfg.asset.joint_armature[dof_type],
+                        self.min_joint_armature[i],
+                    )
             for dof_type in self.cfg.asset.joint_friction:
                 if dof_type in self.dof_names[i]:
                     props["friction"][i] = self.cfg.asset.joint_friction[dof_type]
@@ -970,6 +987,9 @@ class LeggedRobot(EnvBase):
         dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
         rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(robot_asset)
 
+        self.min_joint_armature = torch.zeros(
+            self.num_dofs, dtype=torch.float, device=self.device
+        )
         # save body names from the asset
         self.body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)

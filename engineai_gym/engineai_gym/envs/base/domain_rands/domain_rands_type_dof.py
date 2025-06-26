@@ -187,31 +187,20 @@ class DomainRandsTypeDof(DomainRandsBase):
                             self.original_dof_props[env_id]["friction"][i]
                             * self.joint_friction_coeffs[env_id, 0]
                         )
-                if isinstance(self.env.cfg.asset.min_joint_armature, float):
-                    self.original_dof_props[env_id]["armature"][i] = max(
-                        self.env.cfg.asset.min_joint_armature,
-                        self.original_dof_props[env_id]["armature"][i],
-                    )
-                elif isinstance(self.env.cfg.asset.min_joint_armature, dict):
-                    if self.env.dof_names[i] in self.env.cfg.asset.min_joint_armature:
-                        self.original_dof_props[env_id]["armature"][i] = max(
-                            self.env.cfg.asset.min_joint_armature[
-                                self.env.dof_names[i]
-                            ],
-                            self.original_dof_props[env_id]["armature"][i],
-                        )
                 if self.env.cfg.domain_rands.dof.randomize_joint_armature:
                     if (
                         self.env.cfg.domain_rands.dof.randomize_joint_armature_each_joint
                     ):
-                        dof_props["armature"][i] = (
+                        dof_props["armature"][i] = max(
                             self.original_dof_props[env_id]["armature"][i]
-                            * self.joint_armature_multi[env_id, i]
+                            * self.joint_armature_multi[env_id, i],
+                            self.env.min_joint_armature[i],
                         )
                     else:
-                        dof_props["armature"][i] = (
+                        dof_props["armature"][i] = max(
                             self.original_dof_props[env_id]["armature"][i]
-                            * self.joint_armature_multi[env_id, 0]
+                            * self.joint_armature_multi[env_id, 0],
+                            self.env.min_joint_armature[i],
                         )
             self.env.gym.set_actor_dof_properties(self.env.envs[env_id], 0, dof_props)
 
