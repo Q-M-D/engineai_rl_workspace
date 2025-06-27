@@ -57,8 +57,6 @@ async def train(args):
         else:
             original_files = restore_resume_files(args)
     else:
-        if lock.redis.get(lock.lock_key) == lock.pid.encode():
-            lock.release()
         import engineai_rl_workspace.exps
     from engineai_gym.envs.base.domain_rands.domain_rands_base import DomainRandsBase
     from engineai_gym.envs.base.rewards.rewards_base import RewardsBase
@@ -117,6 +115,7 @@ async def train(args):
         )
     if args.resume or args.run_exist:
         restore_original_files(original_files)
+    if lock.redis.get(lock.lock_key) == lock.pid.encode():
         lock.release()
     print(INITIALIZATION_COMPLETE_MESSAGE)
     env = exp_registry.make_env(
