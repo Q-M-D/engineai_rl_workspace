@@ -6,7 +6,7 @@ from isaacgym import gymutil
 import inspect
 import torch
 from abc import ABC
-from engineai_rl_lib.type import tuple_type
+from engineai_rl_lib.type import tuple_type, nargs_type
 from engineai_rl_workspace import ENGINEAI_WORKSPACE_PACKAGE_DIR
 from engineai_gym import ENGINEAI_GYM_PACKAGE_DIR
 from engineai_rl import ENGINEAI_RL_PACKAGE_DIR
@@ -318,6 +318,16 @@ def get_args():
             "type": str,
             "default": "cuda:0",
             "help": "Device used by the RL algorithm, (cpu, gpu, cuda:0, cuda:1 etc..)",
+        },
+        {
+            "name": "--rl_devices",
+            "type": nargs_type,
+            "help": "Device used by the RL algorithm, (cpu, gpu, cuda:0, cuda:1 etc..)",
+        },
+        {
+            "name": "--sim_devices",
+            "type": nargs_type,
+            "help": "Device used by the simulation, (cpu, gpu, cuda:0, cuda:1 etc..)",
         },
         {
             "name": "--num_envs",

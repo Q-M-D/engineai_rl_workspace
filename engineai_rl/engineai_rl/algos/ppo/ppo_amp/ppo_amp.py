@@ -187,6 +187,14 @@ class PpoAmp(Ppo):
                     )
                     kl_mean = torch.mean(kl)
 
+                    # Reduce the KL divergence across all GPUs
+                    if self.is_multi_gpu:
+                        torch.distributed.all_reduce(
+                            kl_mean, op=torch.distributed.ReduceOp.SUM
+                        )
+                        kl_mean /= self.gpu_world_size
+
+                    # Update the learning rate
                     if kl_mean > self.desired_kl * 2.0:
                         self.learning_rate = max(1e-5, self.learning_rate / 1.5)
                     elif kl_mean < self.desired_kl / 2.0 and kl_mean > 0.0:
@@ -254,6 +262,9 @@ class PpoAmp(Ppo):
             # Gradient step
             self.optimizer.zero_grad()
             loss.backward()
+            # Collect gradients from all GPUs
+            if self.is_multi_gpu:
+                self.reduce_parameters()
             nn.utils.clip_grad_norm_(self.actor_critic.parameters(), self.max_grad_norm)
             self.optimizer.step()
 

@@ -8,6 +8,7 @@ import os
 import statistics
 import time
 import torch
+import torch.distributed as dist
 from collections import deque
 from torch.utils.tensorboard import SummaryWriter as TensorboardSummaryWriter
 
@@ -28,6 +29,11 @@ class RunnerBase(ABC):
         self.env = env
         self.writer_cfg = writer_cfg
         self.debug = debug
+        # check if multi-gpu is enabled
+        self._configure_multi_gpu()
+        # Decide whether to disable logging
+        # We only log from the process with rank 0 (main process)
+        self.disable_logs = self.is_distributed and self.gpu_global_rank != 0
 
     def get_cfg(self, algo_cfg):
         self.algo_cfg = algo_cfg
@@ -57,6 +63,7 @@ class RunnerBase(ABC):
             obs_cfg=self.env.obs_cfg,
             env=self.env,
             device=self.device,
+            multi_gpu_cfg=self.multi_gpu_cfg,
             **self.param_cfg,
         )
         self.num_steps_per_env = self.runner_cfg["num_steps_per_env"]
@@ -165,11 +172,19 @@ class RunnerBase(ABC):
                 self.env.episode_length_buf, high=int(self.env.max_episode_length)
             )
         self.train_mode()
+        # Ensure all parameters are in-synced
+        if self.is_distributed:
+            print(f"Synchronizing parameters for rank {self.gpu_global_rank}...")
+            self.algo.broadcast_parameters()
 
     def init_writer(self):
         # initialize writer
         if not self.debug:
-            if self.log_dir is not None and self.writer is None:
+            if (
+                self.log_dir is not None
+                and self.writer is None
+                and not self.disable_logs
+            ):
                 # Launch either Tensorboard or Neptune & Tensorboard summary writer(s), default: Tensorboard.
                 self.logger_type = self.algo_cfg.get("logger", "tensorboard")
                 self.logger_type = self.logger_type.lower()
@@ -213,133 +228,148 @@ class RunnerBase(ABC):
         return self.env.reset(set_goals_callback, set_goals_callback_args)
 
     def log(self, locs: dict, width: int = 80, pad: int = 35):
-        self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
-        self.tot_time += locs["collection_time"] + locs["learn_time"]
-        iteration_time = locs["collection_time"] + locs["learn_time"]
+        if not self.disable_logs:
+            self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
+            self.tot_time += locs["collection_time"] + locs["learn_time"]
+            iteration_time = locs["collection_time"] + locs["learn_time"]
 
-        if locs["ep_infos"]:
-            converted_ep_infos = convert_dicts(locs["ep_infos"])
-            for key in converted_ep_infos[0]:
-                infotensor = torch.tensor([], device=self.device)
-                for ep_info in converted_ep_infos:
-                    # handle scalar and zero dimensional tensor infos
-                    if key not in ep_info:
-                        continue
-                    if not isinstance(ep_info[key], torch.Tensor):
-                        ep_info[key] = torch.Tensor([ep_info[key]])
-                    elif len(ep_info[key].shape) == 0:
-                        ep_info[key] = ep_info[key].unsqueeze(0)
-                    infotensor = torch.cat((infotensor, ep_info[key].to(self.device)))
-                value = torch.mean(infotensor)
-                # log to logger and terminal
-                if not self.debug:
-                    if key.startswith("rewards/scaled"):
-                        self.writer.add_scalar(
-                            key.replace("rewards/scaled", "rewards_scaled"),
-                            value,
-                            locs["it"],
+            if locs["ep_infos"]:
+                converted_ep_infos = convert_dicts(locs["ep_infos"])
+                for key in converted_ep_infos[0]:
+                    infotensor = torch.tensor([], device=self.device)
+                    for ep_info in converted_ep_infos:
+                        # handle scalar and zero dimensional tensor infos
+                        if key not in ep_info:
+                            continue
+                        if not isinstance(ep_info[key], torch.Tensor):
+                            ep_info[key] = torch.Tensor([ep_info[key]])
+                        elif len(ep_info[key].shape) == 0:
+                            ep_info[key] = ep_info[key].unsqueeze(0)
+                        infotensor = torch.cat(
+                            (infotensor, ep_info[key].to(self.device))
                         )
-                    elif key.startswith("rewards/raw"):
-                        self.writer.add_scalar(
-                            key.replace("rewards/raw", "rewards_raw"), value, locs["it"]
-                        )
-                    else:
-                        self.writer.add_scalar("Episode/" + key, value, locs["it"])
-        algo_string = ""
-        if locs["algo_infos"]:
-            for key, value in locs["algo_infos"].items():
-                if not isinstance(value, torch.Tensor):
-                    locs["algo_infos"][key] = torch.Tensor([value])
-                elif len(value.shape) == 0:
-                    locs["algo_infos"][key] = value.unsqueeze(0)
-                # log to logger and terminal
-                if not self.debug:
-                    self.writer.add_scalar(key, value, locs["it"])
-                algo_string += f"""{f'{key}:':>{pad}} {value:.4f}\n"""
+                    value = torch.mean(infotensor)
+                    # log to logger and terminal
+                    if not self.debug:
+                        if key.startswith("rewards/scaled"):
+                            self.writer.add_scalar(
+                                key.replace("rewards/scaled", "rewards_scaled"),
+                                value,
+                                locs["it"],
+                            )
+                        elif key.startswith("rewards/raw"):
+                            self.writer.add_scalar(
+                                key.replace("rewards/raw", "rewards_raw"),
+                                value,
+                                locs["it"],
+                            )
+                        else:
+                            self.writer.add_scalar("Episode/" + key, value, locs["it"])
+            algo_string = ""
+            if locs["algo_infos"]:
+                for key, value in locs["algo_infos"].items():
+                    if not isinstance(value, torch.Tensor):
+                        locs["algo_infos"][key] = torch.Tensor([value])
+                    elif len(value.shape) == 0:
+                        locs["algo_infos"][key] = value.unsqueeze(0)
+                    # log to logger and terminal
+                    if not self.debug:
+                        self.writer.add_scalar(key, value, locs["it"])
+                    algo_string += f"""{f'{key}:':>{pad}} {value:.4f}\n"""
 
-        mean_std = self.algo.actor_critic.std.mean()
-        fps = int(
-            self.num_steps_per_env
-            * self.env.num_envs
-            / (locs["collection_time"] + locs["learn_time"])
-        )
-        if not self.debug:
-            self.writer.add_scalar("Policy/mean_noise_std", mean_std.item(), locs["it"])
-            self.writer.add_scalar("Perf/total_fps", fps, locs["it"])
-            self.writer.add_scalar(
-                "Perf/collection time", locs["collection_time"], locs["it"]
+            mean_std = self.algo.actor_critic.std.mean()
+            fps = int(
+                self.num_steps_per_env
+                * self.env.num_envs
+                / (locs["collection_time"] + locs["learn_time"])
             )
-            self.writer.add_scalar("Perf/learning_time", locs["learn_time"], locs["it"])
-            if len(locs["rewbuffer"]) > 0:
+            if not self.debug:
                 self.writer.add_scalar(
-                    "Train/mean_reward", statistics.mean(locs["rewbuffer"]), locs["it"]
+                    "Policy/mean_noise_std", mean_std.item(), locs["it"]
+                )
+                self.writer.add_scalar("Perf/total_fps", fps, locs["it"])
+                self.writer.add_scalar(
+                    "Perf/collection time", locs["collection_time"], locs["it"]
                 )
                 self.writer.add_scalar(
-                    "Train/mean_episode_length",
-                    statistics.mean(locs["lenbuffer"]),
-                    locs["it"],
+                    "Perf/learning_time", locs["learn_time"], locs["it"]
                 )
-                if (
-                    self.logger_type != "wandb"
-                ):  # wandb does not support non-integer x-axis logging
+                if len(locs["rewbuffer"]) > 0:
                     self.writer.add_scalar(
-                        "Train/mean_reward/time",
+                        "Train/mean_reward",
                         statistics.mean(locs["rewbuffer"]),
-                        self.tot_time,
+                        locs["it"],
                     )
                     self.writer.add_scalar(
-                        "Train/mean_episode_length/time",
+                        "Train/mean_episode_length",
                         statistics.mean(locs["lenbuffer"]),
-                        self.tot_time,
+                        locs["it"],
                     )
+                    if (
+                        self.logger_type != "wandb"
+                    ):  # wandb does not support non-integer x-axis logging
+                        self.writer.add_scalar(
+                            "Train/mean_reward/time",
+                            statistics.mean(locs["rewbuffer"]),
+                            self.tot_time,
+                        )
+                        self.writer.add_scalar(
+                            "Train/mean_episode_length/time",
+                            statistics.mean(locs["lenbuffer"]),
+                            self.tot_time,
+                        )
 
-        str = f" \033[1m Learning iteration {locs['it']}/{locs['tot_iter']} \033[0m "
+            str = (
+                f" \033[1m Learning iteration {locs['it']}/{locs['tot_iter']} \033[0m "
+            )
 
-        if len(locs["rewbuffer"]) > 0:
-            log_string = (
-                f"""{'#' * width}\n"""
-                f"""{str.center(width, ' ')}\n\n"""
-                f"""{'Run name:':>{pad}} {self.runner_cfg["run_name"]} \n"""
-                f"""{'Computation:':>{pad}} {fps:.0f} steps/s (collection: {locs['collection_time']:.3f}s, learning {locs['learn_time']:.3f}s)\n"""
-                f"""{'Mean action noise std:':>{pad}} {mean_std.item():.2f}\n"""
-                f"""{'Mean reward:':>{pad}} {statistics.mean(locs['rewbuffer']):.2f}\n"""
-                f"""{'Mean episode length:':>{pad}} {statistics.mean(locs['lenbuffer']):.2f}\n"""
-            )  # f"""{'Mean reward/step:':>{pad}} {locs['mean_reward']:.2f}\n"""  #   f"""{'Mean episode length/episode:':>{pad}} {locs['mean_trajectory_length']:.2f}\n""")
-        else:
-            log_string = (
-                f"""{'#' * width}\n"""
-                f"""{str.center(width, ' ')}\n\n"""
-                f"""{'Run name:':>{pad}} {self.runner_cfg["run_name"]} \n"""
-                f"""{'Computation:':>{pad}} {fps:.0f} steps/s (collection: {locs['collection_time']:.3f}s, learning {locs['learn_time']:.3f}s)\n"""
-                f"""{'Mean action noise std:':>{pad}} {mean_std.item():.2f}\n"""
-            )  # f"""{'Mean reward/step:':>{pad}} {locs['mean_reward']:.2f}\n"""  #   f"""{'Mean episode length/episode:':>{pad}} {locs['mean_trajectory_length']:.2f}\n""")
+            if len(locs["rewbuffer"]) > 0:
+                log_string = (
+                    f"""{'#' * width}\n"""
+                    f"""{str.center(width, ' ')}\n\n"""
+                    f"""{'Run name:':>{pad}} {self.runner_cfg["run_name"]} \n"""
+                    f"""{'Computation:':>{pad}} {fps:.0f} steps/s (collection: {locs['collection_time']:.3f}s, learning {locs['learn_time']:.3f}s)\n"""
+                    f"""{'Mean action noise std:':>{pad}} {mean_std.item():.2f}\n"""
+                    f"""{'Mean reward:':>{pad}} {statistics.mean(locs['rewbuffer']):.2f}\n"""
+                    f"""{'Mean episode length:':>{pad}} {statistics.mean(locs['lenbuffer']):.2f}\n"""
+                )  # f"""{'Mean reward/step:':>{pad}} {locs['mean_reward']:.2f}\n"""  #   f"""{'Mean episode length/episode:':>{pad}} {locs['mean_trajectory_length']:.2f}\n""")
+            else:
+                log_string = (
+                    f"""{'#' * width}\n"""
+                    f"""{str.center(width, ' ')}\n\n"""
+                    f"""{'Run name:':>{pad}} {self.runner_cfg["run_name"]} \n"""
+                    f"""{'Computation:':>{pad}} {fps:.0f} steps/s (collection: {locs['collection_time']:.3f}s, learning {locs['learn_time']:.3f}s)\n"""
+                    f"""{'Mean action noise std:':>{pad}} {mean_std.item():.2f}\n"""
+                )  # f"""{'Mean reward/step:':>{pad}} {locs['mean_reward']:.2f}\n"""  #   f"""{'Mean episode length/episode:':>{pad}} {locs['mean_trajectory_length']:.2f}\n""")
 
-        log_string += algo_string
-        log_string += (
-            f"""{'-' * width}\n"""
-            f"""{'Total timesteps:':>{pad}} {self.tot_timesteps}\n"""
-            f"""{'Iteration time:':>{pad}} {iteration_time:.2f}s\n"""
-            f"""{'Total time:':>{pad}} {self.tot_time:.2f}s\n"""
-            f"""{'ETA:':>{pad}} {self.tot_time / (locs['it'] - locs['start_iter'] + 1) * (locs['tot_iter'] - locs['it']):.1f}s\n"""
-        )
-        print(log_string)
+            log_string += algo_string
+            log_string += (
+                f"""{'-' * width}\n"""
+                f"""{'Total timesteps:':>{pad}} {self.tot_timesteps}\n"""
+                f"""{'Iteration time:':>{pad}} {iteration_time:.2f}s\n"""
+                f"""{'Total time:':>{pad}} {self.tot_time:.2f}s\n"""
+                f"""{'ETA:':>{pad}} {self.tot_time / (locs['it'] - locs['start_iter'] + 1) * (locs['tot_iter'] - locs['it']):.1f}s\n"""
+            )
+            print(log_string)
 
     def save(self, path, infos=None):
-        model_state_dict = {
-            name: network.state_dict() for name, network in self.algo.networks.items()
-        }
-        saved_dict = {
-            "model_state_dict": model_state_dict,
-            "optimizer_state_dict": self.algo.optimizer.state_dict(),
-            "iter": self.current_learning_iteration,
-            "infos": infos,
-        }
-        torch.save(saved_dict, path)
+        if not self.disable_logs:
+            model_state_dict = {
+                name: network.state_dict()
+                for name, network in self.algo.networks.items()
+            }
+            saved_dict = {
+                "model_state_dict": model_state_dict,
+                "optimizer_state_dict": self.algo.optimizer.state_dict(),
+                "iter": self.current_learning_iteration,
+                "infos": infos,
+            }
+            torch.save(saved_dict, path)
 
-        # Upload model to external logging service
-        if self.logger_type in ["neptune", "wandb"]:
-            if self.writer_cfg["upload_model"]:
-                self.writer.save_model(path, self.current_learning_iteration)
+            # Upload model to external logging service
+            if self.logger_type in ["neptune", "wandb"]:
+                if self.writer_cfg["upload_model"]:
+                    self.writer.save_model(path, self.current_learning_iteration)
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path, weights_only=True, map_location=self.device)
@@ -365,3 +395,31 @@ class RunnerBase(ABC):
 
     def eval_mode(self):
         self.algo.eval_mode()
+
+    """
+    Helper functions.
+    """
+
+    def _configure_multi_gpu(self):
+        """Configure multi-gpu training."""
+        # check if distributed training is enabled
+        self.gpu_world_size = int(os.getenv("WORLD_SIZE", "1"))
+        self.is_distributed = self.gpu_world_size > 1
+
+        # if not distributed training, set local and global rank to 0 and return
+        if not self.is_distributed:
+            self.gpu_local_rank = 0
+            self.gpu_global_rank = 0
+            self.multi_gpu_cfg = None
+            return
+
+        # get rank and world size
+        self.gpu_local_rank = int(os.getenv("LOCAL_RANK", "0"))
+        self.gpu_global_rank = int(os.getenv("RANK", "0"))
+
+        # make a configuration dictionary
+        self.multi_gpu_cfg = {
+            "global_rank": self.gpu_global_rank,  # rank of the main process
+            "local_rank": self.gpu_local_rank,  # rank of the current process
+            "world_size": self.gpu_world_size,  # total number of processes
+        }

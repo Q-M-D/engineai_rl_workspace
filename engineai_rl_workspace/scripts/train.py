@@ -33,15 +33,31 @@ from engineai_rl_workspace.utils.convert_between_py_and_dict import (
 from engineai_rl_lib.git import store_code_state
 from engineai_rl_lib.json import save_json_files
 from engineai_rl_lib.redis_lock import RedisLock
+import torch.distributed as dist
+
+GPU_WORLD_SIZE = int(os.getenv("WORLD_SIZE", "1"))
+IS_DISTRIBUTED = GPU_WORLD_SIZE > 1
+
+# if not distributed training, set local and global rank to 0 and return
+if not IS_DISTRIBUTED:
+    GPU_LOCAL_RANK = 0
+    GPU_GLOBAL_RANK = 0
+else:
+    dist.init_process_group(backend="nccl", init_method="env://")
+    # get rank and world size
+    GPU_LOCAL_RANK = int(os.getenv("LOCAL_RANK", "0"))
+    GPU_GLOBAL_RANK = int(os.getenv("RANK", "0"))
 
 
 async def train(args):
     global lock, original_files
-    lock = RedisLock(REDIS_HOST, LOCK_KEY, REDIS_PORT, LOCK_TIMEOUT, LOCK_MESSAGE)
-    if not await lock.acquire():
-        print("Could not acquire lock, exiting...")
-        return
-    if args.resume or args.run_exist:
+    if GPU_GLOBAL_RANK == 0:
+        lock = RedisLock(REDIS_HOST, LOCK_KEY, REDIS_PORT, LOCK_TIMEOUT, LOCK_MESSAGE)
+        if not await lock.acquire():
+            print("Could not acquire lock, exiting...")
+            return
+
+    if args.resume or args.run_exist and GPU_GLOBAL_RANK == 0:
         if args.run_exist:
             process = multiprocessing.Process(
                 target=generate_resume_cfg_files_from_json, args=(args,)
@@ -56,7 +72,11 @@ async def train(args):
                 raise RuntimeError("Fail to generate resume files from json, exit.")
         else:
             original_files = restore_resume_files(args)
+        if IS_DISTRIBUTED:
+            dist.barrier()
     else:
+        if IS_DISTRIBUTED:
+            dist.barrier()
         import engineai_rl_workspace.exps
     from engineai_gym.envs.base.domain_rands.domain_rands_base import DomainRandsBase
     from engineai_gym.envs.base.rewards.rewards_base import RewardsBase
@@ -77,7 +97,7 @@ async def train(args):
         env_cfg,
         algo_cfg,
     ) = exp_registry.get_class_and_cfg(name=args.exp_name, args=args)
-    if not args.resume and not args.debug:
+    if not args.resume and not args.debug and GPU_GLOBAL_RANK == 0:
         if not os.path.isdir(log_dir):
             os.makedirs(log_dir, exist_ok=True)
         import engineai_rl_workspace
@@ -113,11 +133,18 @@ async def train(args):
             domain_rand_resume_files + reward_class_resume_files,
             get_resume_dir(log_dir),
         )
-    if args.resume or args.run_exist:
+    if IS_DISTRIBUTED:
+        dist.barrier()
+    if args.resume or args.run_exist and GPU_GLOBAL_RANK == 0:
         restore_original_files(original_files)
-    if lock.redis.get(lock.lock_key) == lock.pid.encode():
-        lock.release()
+    if GPU_GLOBAL_RANK == 0:
+        if lock.redis.get(lock.lock_key) == lock.pid.encode():
+            lock.release()
     print(INITIALIZATION_COMPLETE_MESSAGE)
+    if args.sim_devices:
+        args.sim_device = args.sim_devices[GPU_LOCAL_RANK]
+    if args.rl_devices:
+        args.rl_device = args.rl_devices[GPU_LOCAL_RANK]
     env = exp_registry.make_env(
         task_class,
         obs_class,
@@ -128,7 +155,7 @@ async def train(args):
         env_cfg,
     )
     env = VecGymWrapper(env)
-    if args.video and not args.debug:
+    if args.video and not args.debug and GPU_GLOBAL_RANK == 0:
         env = RecordVideoWrapper(
             env,
             frame_size=args.frame_size,
@@ -157,7 +184,10 @@ if __name__ == "__main__":
         asyncio.run(train(args))
     except KeyboardInterrupt or SystemExit:
         try:
-            if lock.redis.get(lock.lock_key) == lock.pid.encode():
+            if (
+                GPU_GLOBAL_RANK == 0
+                and lock.redis.get(lock.lock_key) == lock.pid.encode()
+            ):
                 restore_original_files(original_files)
                 lock.release()
         except:

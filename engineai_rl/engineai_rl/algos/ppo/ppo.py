@@ -173,7 +173,14 @@ class Ppo(AlgoBase):
                         axis=-1,
                     )
                     kl_mean = torch.mean(kl)
+                    # Reduce the KL divergence across all GPUs
+                    if self.is_multi_gpu:
+                        torch.distributed.all_reduce(
+                            kl_mean, op=torch.distributed.ReduceOp.SUM
+                        )
+                        kl_mean /= self.gpu_world_size
 
+                    # Update the learning rate
                     if kl_mean > self.desired_kl * 2.0:
                         self.learning_rate = max(1e-5, self.learning_rate / 1.5)
                     elif kl_mean < self.desired_kl / 2.0 and kl_mean > 0.0:
@@ -212,6 +219,9 @@ class Ppo(AlgoBase):
             # Gradient step
             self.optimizer.zero_grad()
             loss.backward()
+            # Collect gradients from all GPUs
+            if self.is_multi_gpu:
+                self.reduce_parameters()
             nn.utils.clip_grad_norm_(self.actor_critic.parameters(), self.max_grad_norm)
             self.optimizer.step()
 
@@ -227,3 +237,43 @@ class Ppo(AlgoBase):
             "mean_value_loss": mean_value_loss,
             "mean_surrogate_loss": mean_surrogate_loss,
         }
+
+    """
+    Helper functions
+    """
+
+    def broadcast_parameters(self):
+        for param in self.actor_critic.parameters():
+            torch.distributed.broadcast(param.data, src=0)
+
+    def reduce_parameters(self):
+        """Collect gradients from all GPUs and average them.
+
+        This function is called after the backward pass to synchronize the gradients across all GPUs.
+        """
+        # Create a tensor to store the gradients
+        grads = [
+            param.grad.view(-1)
+            for param in self.actor_critic.parameters()
+            if param.grad is not None
+        ]
+        all_grads = torch.cat(grads)
+
+        # Average the gradients across all GPUs
+        torch.distributed.all_reduce(all_grads, op=torch.distributed.ReduceOp.SUM)
+        all_grads /= self.gpu_world_size
+
+        # Get all parameters
+        all_params = self.actor_critic.parameters()
+
+        # Update the gradients for all parameters with the reduced gradients
+        offset = 0
+        for param in all_params:
+            if param.grad is not None:
+                numel = param.numel()
+                # copy data back from shared buffer
+                param.grad.data.copy_(
+                    all_grads[offset : offset + numel].view_as(param.grad.data)
+                )
+                # update the offset for the next parameter
+                offset += numel
