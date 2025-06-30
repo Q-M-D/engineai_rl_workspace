@@ -416,11 +416,12 @@ class InputRetrivalEnvWrapper:
         return obs
 
     def retrieve_goals(self, goal_dict):
+        goal_list = self._obs_cfg["components"].get("goal_list", [])
+        if not goal_list:
+            return torch.empty(self._env.num_envs, 0, device=self.device)
+
         return torch.cat(
-            [
-                goal_dict[goal_name]
-                for goal_name in self._obs_cfg["components"]["goal_list"]
-            ],
+            [goal_dict[goal_name] for goal_name in goal_list],
             dim=-1,
         )
 
