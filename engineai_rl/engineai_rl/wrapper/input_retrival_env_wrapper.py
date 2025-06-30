@@ -371,48 +371,61 @@ class InputRetrivalEnvWrapper:
             if obs_subtypes:
                 obs[obs_type] = {}
                 for obs_subtype in obs_subtypes:
+                    if not self._obs_cfg["components"][obs_type]["obs_list"]:
+                        obs[obs_type][obs_subtype] = torch.empty(
+                            self._env.num_envs, 0, device=self.device
+                        )
+                    else:
+                        if self._obs_cfg["components"][obs_type]["lag"]:
+                            obs_list = []
+                            for obs_name in self._obs_cfg["components"][obs_type][
+                                "obs_list"
+                            ]:
+                                if obs_name in obs_dict["lagged_obs"][obs_subtype]:
+                                    obs_list.append(
+                                        obs_dict["lagged_obs"][obs_subtype][obs_name]
+                                    )
+                                else:
+                                    obs_list.append(
+                                        obs_dict["non_lagged_obs"][obs_subtype][
+                                            obs_name
+                                        ]
+                                    )
+                        else:
+                            obs_list = [
+                                obs_dict["non_lagged_obs"][obs_subtype][obs_name]
+                                for obs_name in self._obs_cfg["components"][obs_type][
+                                    "obs_list"
+                                ]
+                            ]
+                        obs[obs_type][obs_subtype] = torch.cat(obs_list, dim=-1)
+            else:
+                if not self._obs_cfg["components"][obs_type]["obs_list"]:
+                    obs[obs_type] = torch.empty(
+                        self._env.num_envs, 0, device=self.device
+                    )
+                else:
                     if self._obs_cfg["components"][obs_type]["lag"]:
                         obs_list = []
                         for obs_name in self._obs_cfg["components"][obs_type][
                             "obs_list"
                         ]:
-                            if obs_name in obs_dict["lagged_obs"][obs_subtype]:
+                            if obs_name in obs_dict["lagged_obs"]:
                                 obs_list.append(
-                                    obs_dict["lagged_obs"][obs_subtype][obs_name]
+                                    obs_dict["lagged_obs"]["after_reset"][obs_name]
                                 )
                             else:
                                 obs_list.append(
-                                    obs_dict["non_lagged_obs"][obs_subtype][obs_name]
+                                    obs_dict["non_lagged_obs"]["after_reset"][obs_name]
                                 )
                     else:
                         obs_list = [
-                            obs_dict["non_lagged_obs"][obs_subtype][obs_name]
+                            obs_dict["non_lagged_obs"]["after_reset"][obs_name]
                             for obs_name in self._obs_cfg["components"][obs_type][
                                 "obs_list"
                             ]
                         ]
-                    obs[obs_type][obs_subtype] = torch.cat(obs_list, dim=-1)
-            else:
-
-                if self._obs_cfg["components"][obs_type]["lag"]:
-                    obs_list = []
-                    for obs_name in self._obs_cfg["components"][obs_type]["obs_list"]:
-                        if obs_name in obs_dict["lagged_obs"]:
-                            obs_list.append(
-                                obs_dict["lagged_obs"]["after_reset"][obs_name]
-                            )
-                        else:
-                            obs_list.append(
-                                obs_dict["non_lagged_obs"]["after_reset"][obs_name]
-                            )
-                else:
-                    obs_list = [
-                        obs_dict["non_lagged_obs"]["after_reset"][obs_name]
-                        for obs_name in self._obs_cfg["components"][obs_type][
-                            "obs_list"
-                        ]
-                    ]
-                obs[obs_type] = torch.cat(obs_list, dim=-1)
+                    obs[obs_type] = torch.cat(obs_list, dim=-1)
         return obs
 
     def retrieve_goals(self, goal_dict):
