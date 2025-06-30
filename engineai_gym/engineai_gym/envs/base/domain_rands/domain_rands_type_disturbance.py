@@ -35,9 +35,9 @@ class DomainRandsTypeDisturbance(DomainRandsBase):
 
     def push_robots(self):
         """Random pushes the robots. Emulates an impulse by setting a randomized base velocity."""
-        self.env.root_states[:, 7:9] = self.rand_push_force[:, :2]
+        self.env.root_states[:, 7:9] += self.rand_push_force[:, :2]
 
-        self.env.root_states[:, 10:13] = self.rand_push_torque
+        self.env.root_states[:, 10:13] += self.rand_push_torque
         self.env.gym.set_actor_root_state_tensor(
             self.env.sim, gymtorch.unwrap_tensor(self.env.root_states)
         )
