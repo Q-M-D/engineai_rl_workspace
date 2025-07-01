@@ -3,7 +3,7 @@ import torch
 
 
 class GoalsBiped(Goals):
-    def pos_phase(self):
+    def gait_phase(self):
         phase = self.env.get_phase()
         sin_pos = torch.sin(2 * torch.pi * phase).unsqueeze(1)
         cos_pos = torch.cos(2 * torch.pi * phase).unsqueeze(1)

@@ -36,7 +36,7 @@ class ConfigPm01Rough(ConfigBipedRobot):
             "contact_mask",
             "height_measurements",
         ]
-        goal_list = ["pos_phase", "commands"]
+        goal_list = ["gait_phase", "commands"]
         use_ref_actions = False
         episode_length_s = 24
 

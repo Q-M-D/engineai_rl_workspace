@@ -20,7 +20,7 @@ class ConfigSa01Ppo(ConfigPpo):
 
     class input(ConfigPpo.input):
         class components(ConfigPpo.input.components):
-            goal_list = ["pos_phase", "commands"]
+            goal_list = ["gait_phase", "commands"]
 
             class actor(ConfigPpo.input.components.actor):
                 obs_history_length = 15
