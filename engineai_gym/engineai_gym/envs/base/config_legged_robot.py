@@ -182,7 +182,7 @@ class ConfigLeggedRobot(BaseConfig):
             stiffness_multi_range = [0.8, 1.2]
             damping_multi_range = [0.8, 1.2]
             randomize_torque = False
-            torque_multip_range = [0.8, 1.2]
+            torque_multi_range = [0.8, 1.2]
             randomize_motor_offset = False
             motor_offset_range = [-0.035, 0.035]
             randomize_joint_friction = False

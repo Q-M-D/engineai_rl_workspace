@@ -59,7 +59,7 @@ class DomainRandsTypeDof(DomainRandsBase):
 
     def init_rand_vec_on_decimation(self):
         if self.env.cfg.domain_rands.dof.randomize_torque:
-            motor_strength_ranges = self.env.cfg.domain_rands.dof.torque_multip_range
+            motor_strength_ranges = self.env.cfg.domain_rands.dof.torque_multi_range
             self.torque_multi = torch_rand_float(
                 motor_strength_ranges[0],
                 motor_strength_ranges[1],

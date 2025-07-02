@@ -122,7 +122,7 @@ class ConfigPm01Rough(ConfigBipedRobot):
             damping_multi_range = [0.8, 1.2]
 
             randomize_torque = True
-            torque_multip_range = [0.8, 1.2]
+            torque_multi_range = [0.8, 1.2]
 
             randomize_motor_offset = True
             motor_offset_range = [-0.035, 0.035]
