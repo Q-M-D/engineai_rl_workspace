@@ -103,25 +103,25 @@ class DomainRandsTypeDof(DomainRandsBase):
                 for i, name in enumerate(self.env.dof_names):
                     for (
                         dof_type,
-                        joint_friction_multiplier_range,
+                        joint_friction_multi_range,
                     ) in (
                         self.env.cfg.domain_rands.dof.joint_friction_multi_range_each_joint.items()
                     ):
                         if dof_type in name:
                             self.joint_friction_coeffs[env_ids, i] = torch_rand_float(
-                                joint_friction_multiplier_range[0],
-                                joint_friction_multiplier_range[1],
+                                joint_friction_multi_range[0],
+                                joint_friction_multi_range[1],
                                 (len(env_ids), 1),
                                 device=self.env.device,
                             ).reshape(-1)
                             break
             else:
-                joint_friction_multiplier_range = (
+                joint_friction_multi_range = (
                     self.env.cfg.domain_rands.dof.joint_friction_multi_range
                 )
                 self.joint_friction_coeffs[env_ids] = torch_rand_float(
-                    joint_friction_multiplier_range[0],
-                    joint_friction_multiplier_range[1],
+                    joint_friction_multi_range[0],
+                    joint_friction_multi_range[1],
                     (len(env_ids), 1),
                     device=self.env.device,
                 )
@@ -130,14 +130,14 @@ class DomainRandsTypeDof(DomainRandsBase):
                 for i, name in enumerate(self.env.dof_names):
                     for (
                         dof_type,
-                        joint_armature_multiplier_range,
+                        joint_armature_multi_range,
                     ) in (
                         self.env.cfg.domain_rands.dof.joint_armature_multi_range_each_joint.items()
                     ):
                         if dof_type in name:
                             self.joint_armature_multi[env_ids, i] = torch_rand_float(
-                                max(0, joint_armature_multiplier_range[0]),
-                                joint_armature_multiplier_range[1],
+                                max(0, joint_armature_multi_range[0]),
+                                joint_armature_multi_range[1],
                                 (len(env_ids), 1),
                                 device=self.env.device,
                             ).reshape(-1)
