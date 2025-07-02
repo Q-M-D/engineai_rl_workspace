@@ -31,6 +31,8 @@
  - Save git info
 #### Create Runs from json
  - Save the `.json` file for recording parameters and have a built-in tool to convert it to a `.py` file, which is convenient for modification according to a certain run
+#### Multi-GPU Training
+ - Support multi-GPU for faster training
 #### Format conversion
  - Convert `.pt` files to `.onnx` and `.mnn`
 ## Getting Started ##
