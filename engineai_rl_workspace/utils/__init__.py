@@ -8,7 +8,7 @@ from .helpers import (
 )
 from .process_resume_files import restore_resume_files, restore_original_files
 from .convert_between_py_and_dict import (
-    generate_resume_cfg_files_from_json,
+    generate_cfg_files_from_json,
     get_dict_from_cfg_before_modification,
 )
 from .tester_registry import tester_registry

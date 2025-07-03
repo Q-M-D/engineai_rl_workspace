@@ -16,8 +16,8 @@ LOCK_TIMEOUT = 180  # seconds
 LOCK_MESSAGE = (
     "Previous run is resuming, waiting...\n"
     "If last run is complete and this message is still showing, it means the last run was interrupted.\n"
-    'This may cause original files are overwritten by resume files, but original files are saved as "py.bak".\n'
-    'Check and recover files, then run "redis-cli del resume_lock" to release lock.'
+    "This may cause git checked out another commit, cfg files are overwritten by resume cfg files or stashed files have not been unstashed.\n"
+    'Checkout original commit and unstash files, if needed, then run "redis-cli del resume_lock" to release lock.'
 )
 PROGRAM_START_MESSAGE = Color.apply(
     "Program is initializing! Please don't change code or config before initialization completed!",

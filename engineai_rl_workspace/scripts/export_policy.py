@@ -1,14 +1,18 @@
 import os, asyncio
 from collections import OrderedDict
+from git import Repo
 
 from engineai_rl_workspace.utils import (
     get_args,
     get_load_run_path,
     get_load_checkpoint_path,
-    restore_resume_files,
-    restore_original_files,
+    generate_cfg_files_from_json,
     convert_nn_to_onnx,
     convert_onnx_to_mnn,
+)
+from engineai_rl_workspace.utils.process_resume_files import (
+    get_log_root_and_log_dir,
+    checkout_resume_commit,
 )
 from engineai_rl_workspace import (
     REDIS_HOST,
@@ -17,6 +21,12 @@ from engineai_rl_workspace import (
     LOCK_TIMEOUT,
     LOCK_MESSAGE,
     INITIALIZATION_COMPLETE_MESSAGE,
+    ENGINEAI_WORKSPACE_ROOT_DIR,
+)
+from engineai_rl_lib.git import (
+    get_current_commit_and_branch,
+    checkout_commit_or_branch,
+    unstash_files,
 )
 from engineai_rl_lib.class_operations import class_to_dict
 from engineai_rl_lib.redis_lock import RedisLock
@@ -27,13 +37,18 @@ import torch
 
 
 async def export_policy(args):
-    global lock, original_files
+    global lock, repo, current_commit, current_branch
     lock = RedisLock(REDIS_HOST, LOCK_KEY, REDIS_PORT, LOCK_TIMEOUT, LOCK_MESSAGE)
     if not await lock.acquire():
         print("Could not acquire lock, exiting...")
         return
     args.resume = True
-    original_files = restore_resume_files(args)
+    repo = Repo(ENGINEAI_WORKSPACE_ROOT_DIR)
+    current_commit, current_branch = get_current_commit_and_branch(repo)
+    _, log_dir = get_log_root_and_log_dir(args)
+    checkout_resume_commit(log_dir, repo)
+    generate_cfg_files_from_json(args)
+    import engineai_rl_workspace.exps
     from engineai_rl_workspace.utils.exp_registry import exp_registry
 
     (
@@ -50,7 +65,8 @@ async def export_policy(args):
         env_cfg,
         algo_cfg,
     ) = exp_registry.get_class_and_cfg(name=args.exp_name, args=args)
-    restore_original_files(original_files)
+    checkout_commit_or_branch(repo, current_commit, current_branch)
+    unstash_files(repo)
     if lock.redis.get(lock.lock_key) == lock.pid.encode():
         lock.release()
     print(INITIALIZATION_COMPLETE_MESSAGE)
@@ -262,14 +278,15 @@ async def export_policy(args):
 
 
 if __name__ == "__main__":
-    global lock, original_files
+    global lock, repo, current_commit, current_branch
     try:
         args = get_args()
         asyncio.run(export_policy(args))
     except KeyboardInterrupt or SystemExit:
         try:
             if lock.redis.get(lock.lock_key) == lock.pid.encode():
-                restore_original_files(original_files)
+                checkout_commit_or_branch(repo, current_commit, current_branch)
+                unstash_files(repo)
                 lock.release()
         except:
             pass

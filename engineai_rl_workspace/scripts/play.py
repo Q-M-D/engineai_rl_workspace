@@ -3,14 +3,18 @@ import pygame
 from threading import Thread
 import numpy as np
 from tqdm import tqdm
+from git import Repo
 
 from engineai_gym import ENGINEAI_GYM_PACKAGE_DIR
 from engineai_gym.tester.tester import Tester
 from engineai_gym.wrapper import VecGymWrapper, RecordVideoWrapper
 from engineai_rl_workspace.utils import (
     get_args,
-    restore_resume_files,
-    restore_original_files,
+    generate_cfg_files_from_json,
+)
+from engineai_rl_workspace.utils.process_resume_files import (
+    get_log_root_and_log_dir,
+    checkout_resume_commit,
 )
 from engineai_rl_workspace import (
     REDIS_HOST,
@@ -19,12 +23,18 @@ from engineai_rl_workspace import (
     LOCK_TIMEOUT,
     LOCK_MESSAGE,
     INITIALIZATION_COMPLETE_MESSAGE,
+    ENGINEAI_WORKSPACE_ROOT_DIR,
 )
 from engineai_rl_lib.redis_lock import RedisLock
+from engineai_rl_lib.git import (
+    get_current_commit_and_branch,
+    checkout_commit_or_branch,
+    unstash_files,
+)
 
 
 async def play(args):
-    global lock, original_files
+    global lock, repo, current_commit, current_branch
     lock = RedisLock(REDIS_HOST, LOCK_KEY, REDIS_PORT, LOCK_TIMEOUT, LOCK_MESSAGE)
     global x_vel_cmd, y_vel_cmd, yaw_vel_cmd, last_x_vel_cmd, last_y_vel_cmd, last_yaw_vel_cmd
     (
@@ -39,7 +49,12 @@ async def play(args):
     if not await lock.acquire():
         print("Could not acquire lock, exiting...")
         return
-    original_files = restore_resume_files(args)
+    repo = Repo(ENGINEAI_WORKSPACE_ROOT_DIR)
+    current_commit, current_branch = get_current_commit_and_branch(repo)
+    _, log_dir = get_log_root_and_log_dir(args)
+    checkout_resume_commit(log_dir, repo)
+    generate_cfg_files_from_json(args)
+    import engineai_rl_workspace.exps
     from engineai_rl_workspace.utils.exp_registry import exp_registry
 
     (
@@ -62,7 +77,8 @@ async def play(args):
     else:
         env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
 
-    restore_original_files(original_files)
+    checkout_commit_or_branch(repo, current_commit, current_branch)
+    unstash_files(repo)
     if lock.redis.get(lock.lock_key) == lock.pid.encode():
         lock.release()
     print(INITIALIZATION_COMPLETE_MESSAGE)
@@ -192,7 +208,7 @@ def use_joystick(args):
 
 
 if __name__ == "__main__":
-    global lock, original_files
+    global lock, repo, current_commit, current_branch
     try:
         MOVE_CAMERA = False
         args = get_args()
@@ -202,7 +218,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt or SystemExit:
         try:
             if lock.redis.get(lock.lock_key) == lock.pid.encode():
-                restore_original_files(original_files)
+                checkout_commit_or_branch(repo, current_commit, current_branch)
+                unstash_files(repo)
                 lock.release()
         except:
             pass

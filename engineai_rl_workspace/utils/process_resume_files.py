@@ -7,6 +7,7 @@ from .helpers import (
     get_original_path_from_resume_path,
 )
 from engineai_rl_workspace import ENGINEAI_WORKSPACE_ROOT_DIR
+from engineai_rl_lib.git import get_commit_hash, stash_files
 
 
 def save_resume_files_from_file_paths(files, resume_dir):
@@ -30,14 +31,7 @@ def get_resume_dir(log_dir):
 
 
 def restore_resume_files(args):
-    if args.exp_name is None:
-        raise ValueError("Please specify an experiment name!")
-    if args.log_root is None:
-        log_root = os.path.join(
-            ENGINEAI_WORKSPACE_ROOT_DIR, "logs", args.exp_name, args.sub_exp_name
-        )
-    else:
-        log_root = args.log_root
+    log_root = get_log_root(args.exp_name, args.sub_exp_name, args.log_root)
     if args.load_run is None:
         args.load_run = -1
     log_dir, load_run = get_load_run_path(log_root, load_run=args.load_run)
@@ -59,6 +53,32 @@ def restore_resume_files(args):
     import engineai_rl_workspace.exps
 
     return original_items
+
+
+def checkout_resume_commit(log_dir, repo):
+    commit_hash = get_commit_hash(log_dir)
+    stash_files(repo)
+    repo.git.checkout(commit_hash)
+
+
+def get_log_root_and_log_dir(args):
+    log_root = get_log_root(args.exp_name, args.sub_exp_name, args.log_root)
+    if args.load_run is None:
+        args.load_run = -1
+    log_dir, load_run = get_load_run_path(log_root, load_run=args.load_run)
+    return log_root, log_dir
+
+
+def get_log_root(exp_name, sub_exp_name, log_root=None):
+    if exp_name is None:
+        raise ValueError("Please specify an experiment name!")
+    if log_root is None:
+        log_root = os.path.join(
+            ENGINEAI_WORKSPACE_ROOT_DIR, "logs", exp_name, sub_exp_name
+        )
+    else:
+        log_root = log_root
+    return log_root
 
 
 def restore_original_files(original_items):

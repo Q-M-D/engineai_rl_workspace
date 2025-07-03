@@ -369,12 +369,10 @@ def delete_class_attributes_value(pyfile_name, node, del_items, key_names=None):
             print(f"Deleting redundant attribute: {attr_name} (in {pyfile_name})")
 
 
-def generate_py_from_dict(target_config_data, py_files, resume_dir):
+def generate_py_from_dict(target_config_data, py_files):
     trees = get_trees_from_py_files(py_files)
     source_config_data = generate_dict_from_trees(trees)
     trees.reverse()
-    for idx, py_file in enumerate(py_files):
-        py_files[idx] = get_resume_path_from_original_path(py_file, resume_dir)
     update_and_add_dict, del_dict = get_update_and_add_dict_and_del_dict(
         source_config_data, target_config_data
     )
@@ -403,11 +401,7 @@ def generate_py_from_dict(target_config_data, py_files, resume_dir):
                 delete_class_attributes_value(py_file, node, del_dict)
                 break
     for tree, py_file in zip(trees, py_files):
-        save_file = os.path.join(resume_dir, py_file)
-        save_dir = save_file.rsplit("/", 1)[0]
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-        with open(save_file + ".txt", "w") as file:
+        with open(py_file, "w") as file:
             file.write(astor.to_source(tree))
 
 
@@ -420,7 +414,7 @@ def get_trees_from_py_files(py_files):
     return trees
 
 
-def generate_resume_cfg_files_from_json(args, log_dir=None):
+def generate_cfg_files_from_json(args, log_dir=None):
     from .exp_registry import exp_registry
     import engineai_rl_workspace.exps
 
@@ -442,7 +436,6 @@ def generate_resume_cfg_files_from_json(args, log_dir=None):
             log_dir = os.path.join(log_root, load_run)
         else:
             raise RuntimeError("Current log dir is not provided!")
-    resume_dir = os.path.join(log_dir, "resume")
     json_file_path = os.path.join(log_dir, "config.json")
     with open(json_file_path) as file:
         config_data = json.load(file)
@@ -452,8 +445,8 @@ def generate_resume_cfg_files_from_json(args, log_dir=None):
     train_cfg_items = get_class_and_parent_paths(
         type(exp_registry.algo_cfgs[args.exp_name]), BaseConfig
     )
-    generate_py_from_dict(config_data["env_cfg"], env_cfg_items, resume_dir)
-    generate_py_from_dict(config_data["algo_cfg"], train_cfg_items, resume_dir)
+    generate_py_from_dict(config_data["env_cfg"], env_cfg_items)
+    generate_py_from_dict(config_data["algo_cfg"], train_cfg_items)
 
 
 def get_dict_from_cfg_before_modification(cfg):
