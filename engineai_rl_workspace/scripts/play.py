@@ -30,6 +30,7 @@ from engineai_rl_lib.git import (
     get_current_commit_and_branch,
     checkout_commit_or_branch,
     unstash_files,
+    apply_patch,
 )
 
 
@@ -53,6 +54,7 @@ async def play(args):
     current_commit, current_branch = get_current_commit_and_branch(repo)
     _, log_dir = get_log_root_and_log_dir(args)
     checkout_resume_commit(log_dir, repo)
+    apply_patch(os.path.join(log_dir, "resume.patch"), ENGINEAI_WORKSPACE_ROOT_DIR)
     generate_cfg_files_from_json(args)
     import engineai_rl_workspace.exps
     from engineai_rl_workspace.utils.exp_registry import exp_registry

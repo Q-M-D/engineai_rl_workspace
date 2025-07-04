@@ -32,6 +32,8 @@ from engineai_rl_lib.git import (
     get_current_commit_and_branch,
     checkout_commit_or_branch,
     unstash_files,
+    save_patch,
+    apply_patch,
 )
 from engineai_rl_lib.json import save_json_files
 from engineai_rl_lib.redis_lock import RedisLock
@@ -63,6 +65,7 @@ async def train(args):
         current_commit, current_branch = get_current_commit_and_branch(repo)
         _, log_dir = get_log_root_and_log_dir(args)
         checkout_resume_commit(log_dir, repo)
+        apply_patch(os.path.join(log_dir, "resume.patch"), ENGINEAI_WORKSPACE_ROOT_DIR)
         generate_cfg_files_from_json(args)
         import engineai_rl_workspace.exps
 
@@ -93,6 +96,7 @@ async def train(args):
             os.makedirs(log_dir, exist_ok=True)
 
         store_code_state(log_dir, repo)
+        save_patch(os.path.join(log_dir, "resume.patch"))
         env_cfg_raw_dict = get_dict_from_cfg_before_modification(env_cfg)
         algo_cfg_raw_dict = get_dict_from_cfg_before_modification(algo_cfg)
         cfg = {"env_cfg": env_cfg_raw_dict, "algo_cfg": algo_cfg_raw_dict}

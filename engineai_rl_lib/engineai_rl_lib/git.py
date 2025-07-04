@@ -1,5 +1,5 @@
 import os
-import git
+import subprocess
 import pathlib
 
 
@@ -54,6 +54,23 @@ def checkout_commit_or_branch(repo, commit, branch):
         repo.git.checkout(branch, force=True)
     else:
         repo.git.checkout(commit, force=True)
+
+
+def save_patch(file):
+    result = subprocess.run(["git", "diff"], capture_output=True, text=True)
+
+    if result.returncode == 0:
+        # Write the diff output to the patch file
+        with open(file, "w") as f:
+            f.write(result.stdout)
+        print(f"Patch saved to {file}")
+    else:
+        print("Error running git diff:")
+        print(result.stderr)
+
+
+def apply_patch(file, repo_path):
+    subprocess.run(["git", "apply", file], cwd=repo_path)
 
 
 def stash_files(repo):
