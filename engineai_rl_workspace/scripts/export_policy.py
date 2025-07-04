@@ -283,10 +283,9 @@ if __name__ == "__main__":
         args = get_args()
         asyncio.run(export_policy(args))
     except KeyboardInterrupt or SystemExit:
-        try:
-            if lock.redis.get(lock.lock_key) == lock.pid.encode():
+        if lock.redis.get(lock.lock_key) == lock.pid.encode():
+            try:
                 checkout_commit_or_branch(repo, current_commit, current_branch)
                 unstash_files(repo)
+            finally:
                 lock.release()
-        except:
-            pass

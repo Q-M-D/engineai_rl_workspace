@@ -149,13 +149,10 @@ if __name__ == "__main__":
         args = get_args()
         asyncio.run(train(args))
     except KeyboardInterrupt or SystemExit:
-        try:
-            if (
-                GPU_GLOBAL_RANK == 0
-                and lock.redis.get(lock.lock_key) == lock.pid.encode()
-            ):
-                checkout_commit_or_branch(repo, current_commit, current_branch)
-                unstash_files(repo)
-                lock.release()
-        except:
-            pass
+        if GPU_GLOBAL_RANK == 0:
+            if lock.redis.get(lock.lock_key) == lock.pid.encode():
+                try:
+                    checkout_commit_or_branch(repo, current_commit, current_branch)
+                    unstash_files(repo)
+                finally:
+                    lock.release()
