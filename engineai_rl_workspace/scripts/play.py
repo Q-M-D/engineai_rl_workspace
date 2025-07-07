@@ -73,17 +73,18 @@ async def play(args):
         env_cfg,
         algo_cfg,
     ) = exp_registry.get_class_and_cfg(name=args.exp_name, args=args)
-    # override some parameters for testing
-    if args.use_joystick or args.headless:
-        env_cfg.env.num_envs = 1
-    else:
-        env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
 
     checkout_commit_or_branch(repo, current_commit, current_branch)
     unstash_files(repo)
     if lock.redis.get(lock.lock_key) == lock.pid.encode():
         lock.release()
     print(INITIALIZATION_COMPLETE_MESSAGE)
+
+    # override some parameters for testing
+    if args.use_joystick or args.headless:
+        env_cfg.env.num_envs = 1
+    else:
+        env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
 
     # prepare environment
     env = exp_registry.make_env(
