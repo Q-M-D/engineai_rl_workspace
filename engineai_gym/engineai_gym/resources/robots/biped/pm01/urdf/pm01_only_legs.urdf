@@ -107,7 +107,7 @@
     <parent link="link_hip_roll_l" />
     <child link="link_hip_yaw_l" />
     <axis xyz="0 0 1" />
-    <limit lower="-1.57" upper="4.014" effort="61" velocity="35.2" />
+    <limit lower="-1.57" upper="4.014" effort="52" velocity="35.2" />
   </joint>
   <link name="link_knee_pitch_l">
     <inertial>
@@ -165,7 +165,7 @@
     <parent link="link_knee_pitch_l" />
     <child link="link_ankle_pitch_l" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.6807" upper="0.7243" effort="61" velocity="35.2" />
+    <limit lower="-0.6807" upper="0.7243" effort="52" velocity="35.2" />
   </joint>
   <link name="link_ankle_roll_l">
     <inertial>
@@ -194,7 +194,7 @@
     <parent link="link_ankle_pitch_l" />
     <child link="link_ankle_roll_l" />
     <axis xyz="1 0 0" />
-    <limit lower="-0.2618" upper="0.2618" effort="61" velocity="35.2" />
+    <limit lower="-0.2618" upper="0.2618" effort="52" velocity="35.2" />
   </joint>
   <link name="link_hip_pitch_r">
     <inertial>
@@ -281,7 +281,7 @@
     <parent link="link_hip_roll_r" />
     <child link="link_hip_yaw_r" />
     <axis xyz="0 0 1" />
-    <limit lower="-4.014" upper="1.57" effort="61" velocity="35.2" />
+    <limit lower="-4.014" upper="1.57" effort="52" velocity="35.2" />
   </joint>
   <link name="link_knee_pitch_r">
     <inertial>
@@ -339,7 +339,7 @@
     <parent link="link_knee_pitch_r" />
     <child link="link_ankle_pitch_r" />
     <axis xyz="0 1 0" />
-    <limit lower="-0.6807" upper="0.7243" effort="61" velocity="35.2" />
+    <limit lower="-0.6807" upper="0.7243" effort="52" velocity="35.2" />
   </joint>
   <link name="link_ankle_roll_r">
     <inertial>
@@ -368,7 +368,7 @@
     <parent link="link_ankle_pitch_r" />
     <child link="link_ankle_roll_r" />
     <axis xyz="1 0 0" />
-    <limit lower="-0.2618" upper="0.2618" effort="61" velocity="35.2" />
+    <limit lower="-0.2618" upper="0.2618" effort="52" velocity="35.2" />
   </joint>
   <link name="link_torso_yaw">
     <inertial>
@@ -397,7 +397,7 @@
     <parent link="link_base" />
     <child link="link_torso_yaw" />
     <axis xyz="0 0 1" />
-    <limit lower="-4.014" upper="1.57" effort="61" velocity="35.2" />
+    <limit lower="-4.014" upper="1.57" effort="52" velocity="35.2" />
   </joint>
   <link name="link_shoulder_pitch_l">
     <inertial>
@@ -426,7 +426,7 @@
     <parent link="link_torso_yaw" />
     <child link="link_shoulder_pitch_l" />
     <axis xyz="0 0.99803 0.062791" />
-    <limit lower="-2.9671" upper="2.7925" effort="61" velocity="35.2" />
+    <limit lower="-2.9671" upper="2.7925" effort="52" velocity="35.2" />
   </joint>
   <link name="link_shoulder_roll_l">
     <inertial>
@@ -455,7 +455,7 @@
     <parent link="link_shoulder_pitch_l" />
     <child link="link_shoulder_roll_l" />
     <axis xyz="1 0 0" />
-    <limit lower="-0.6108" upper="2.3562" effort="61" velocity="35.2" />
+    <limit lower="-0.6108" upper="2.3562" effort="52" velocity="35.2" />
   </joint>
   <link name="link_shoulder_yaw_l">
     <inertial>
@@ -484,7 +484,7 @@
     <parent link="link_shoulder_roll_l" />
     <child link="link_shoulder_yaw_l" />
     <axis xyz="0 -0.062803 0.99803" />
-    <limit lower="-2.618" upper="2.618" effort="61" velocity="35.2" />
+    <limit lower="-2.618" upper="2.618" effort="52" velocity="35.2" />
   </joint>
   <link name="link_elbow_pitch_l">
     <inertial>
@@ -513,7 +513,7 @@
     <parent link="link_shoulder_yaw_l" />
     <child link="link_elbow_pitch_l" />
     <axis xyz="0.0027243 0.99802 0.062803" />
-    <limit lower="-2.1948" upper="0.7374" effort="61" velocity="35.2" />
+    <limit lower="-2.1948" upper="0.7374" effort="52" velocity="35.2" />
   </joint>
   <link name="link_elbow_yaw_l">
     <inertial>
@@ -542,7 +542,7 @@
     <parent link="link_elbow_pitch_l" />
     <child link="link_elbow_yaw_l" />
     <axis xyz="-0.21479 -0.061921 0.9747" />
-    <limit lower="-2.618" upper="2.618" effort="61" velocity="35.2" />
+    <limit lower="-2.618" upper="2.618" effort="52" velocity="35.2" />
   </joint>
   <link name="link_shoulder_pitch_r">
     <inertial>
@@ -571,7 +571,7 @@
     <parent link="link_torso_yaw" />
     <child link="link_shoulder_pitch_r" />
     <axis xyz="0 0.99803 -0.062791" />
-    <limit lower="-2.9671" upper="2.7925" effort="61" velocity="35.2" />
+    <limit lower="-2.9671" upper="2.7925" effort="52" velocity="35.2" />
   </joint>
   <link name="link_shoulder_roll_r">
     <inertial>
@@ -600,7 +600,7 @@
     <parent link="link_shoulder_pitch_r" />
     <child link="link_shoulder_roll_r" />
     <axis xyz="1 0 0" />
-    <limit lower="-2.3562" upper="0.6108" effort="61" velocity="35.2" />
+    <limit lower="-2.3562" upper="0.6108" effort="52" velocity="35.2" />
   </joint>
   <link name="link_shoulder_yaw_r">
     <inertial>
@@ -629,7 +629,7 @@
     <parent link="link_shoulder_roll_r" />
     <child link="link_shoulder_yaw_r" />
     <axis xyz="0 0.062791 0.99803" />
-    <limit lower="-2.618" upper="2.618" effort="61" velocity="35.2" />
+    <limit lower="-2.618" upper="2.618" effort="52" velocity="35.2" />
   </joint>
   <link name="link_elbow_pitch_r">
     <inertial>
@@ -658,7 +658,7 @@
     <parent link="link_shoulder_yaw_r" />
     <child link="link_elbow_pitch_r" />
     <axis xyz="0.0027243 0.99802 -0.06279" />
-    <limit lower="-2.1948" upper="0.7374" effort="61" velocity="35.2" />
+    <limit lower="-2.1948" upper="0.7374" effort="52" velocity="35.2" />
   </joint>
   <link name="link_elbow_yaw_r">
     <inertial>
@@ -687,7 +687,7 @@
     <parent link="link_elbow_pitch_r" />
     <child link="link_elbow_yaw_r" />
     <axis xyz="-0.21479 0.061909 0.9747" />
-    <limit lower="-2.618" upper="2.618" effort="61" velocity="35.2" />
+    <limit lower="-2.618" upper="2.618" effort="52" velocity="35.2" />
   </joint>
   <link name="link_head_yaw">
     <inertial>
@@ -716,6 +716,6 @@
     <parent link="link_torso_yaw" />
     <child link="link_head_yaw" />
     <axis xyz="0 0 1" />
-    <limit lower="-0.6109" upper="0.6109" effort="61" velocity="35.2" />
+    <limit lower="-0.6109" upper="0.6109" effort="52" velocity="35.2" />
   </joint>
 </robot>
