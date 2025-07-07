@@ -93,7 +93,8 @@ class ConfigLeggedRobot(BaseConfig):
         # probability of still commands
         still_ratio = 0.25
         # set command to zero if command < set_zero_threshold
-        set_zero_threshold = 0.3
+        lin_vel_set_zero_threshold = 0.3
+        ang_vel_set_zero_threshold = 0.314
 
         class ranges:
             lin_vel_x = [-1.0, 1.0]  # min max [m/s]

@@ -457,8 +457,13 @@ class LeggedRobot(EnvBase):
         # set small commands to zero
         self.commands[env_ids, :2] *= (
             torch.norm(self.commands[env_ids, :2], dim=1)
-            > self.cfg.commands.set_zero_threshold
+            > self.cfg.commands.lin_vel_set_zero_threshold
         ).unsqueeze(1)
+        self.commands[env_ids, 2] *= (
+            torch.abs(self.commands[env_ids, 2])
+            > self.cfg.commands.ang_vel_set_zero_threshold
+        )
+
         self.stand_still_idx[env_ids] = (
             torch_rand_float(0, 1, (len(env_ids), 1), device=self.device).squeeze(1)
             < self.cfg.commands.still_ratio
