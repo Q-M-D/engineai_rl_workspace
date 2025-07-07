@@ -83,12 +83,18 @@ class Obs:
         return self.env.dof_pos - self.env.ref_dof_pos
 
     def rand_push_force(self):
-        return self.env.domain_rands.domain_rands_type_disturbance.rand_push_force[
-            :, :2
-        ]
+        try:
+            return self.env.domain_rands.domain_rands_type_disturbance.rand_push_force[
+                :, :2
+            ]
+        except:
+            return torch.zeros(self.env.num_envs, 2, device=self.env.device)
 
     def rand_push_torque(self):
-        return self.env.domain_rands.domain_rands_type_disturbance.rand_push_torque
+        try:
+            return self.env.domain_rands.domain_rands_type_disturbance.rand_push_torque
+        except:
+            return torch.zeros(self.env.num_envs, 3, device=self.env.device)
 
     def terrain_frictions(self):
         return self.env.env_frictions
