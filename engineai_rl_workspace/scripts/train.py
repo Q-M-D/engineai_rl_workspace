@@ -13,8 +13,6 @@ print(PROGRAM_START_MESSAGE)
 import os, asyncio
 from git import Repo
 
-from engineai_gym.wrapper import VecGymWrapper, RecordVideoWrapper
-
 from engineai_rl_workspace.utils import (
     get_args,
     generate_cfg_files_from_json,
@@ -75,6 +73,7 @@ async def train(args):
         if IS_DISTRIBUTED:
             dist.barrier()
         import engineai_rl_workspace.exps
+    from engineai_gym.wrapper import VecGymWrapper, RecordVideoWrapper
     from engineai_rl_workspace.utils.exp_registry import exp_registry
 
     (

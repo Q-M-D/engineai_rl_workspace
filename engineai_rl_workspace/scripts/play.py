@@ -7,7 +7,6 @@ from git import Repo
 
 from engineai_gym import ENGINEAI_GYM_PACKAGE_DIR
 from engineai_gym.tester.tester import Tester
-from engineai_gym.wrapper import VecGymWrapper, RecordVideoWrapper
 from engineai_rl_workspace.utils import (
     get_args,
     generate_cfg_files_from_json,
@@ -56,6 +55,7 @@ async def play(args):
     checkout_resume_commit(log_dir, repo)
     apply_patch(os.path.join(log_dir, "resume.patch"), ENGINEAI_WORKSPACE_ROOT_DIR)
     generate_cfg_files_from_json(args)
+    from engineai_gym.wrapper import VecGymWrapper, RecordVideoWrapper
     import engineai_rl_workspace.exps
     from engineai_rl_workspace.utils.exp_registry import exp_registry
 
