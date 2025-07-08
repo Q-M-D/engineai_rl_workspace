@@ -3,6 +3,8 @@ from abc import ABC
 from collections import defaultdict
 import csv
 
+import numpy as np
+
 
 class LoggerBase(ABC):
     def __init__(self, name, env, time, test_dir, extra_args):
@@ -36,7 +38,13 @@ class LoggerBase(ABC):
             writer = csv.writer(file)
             writer.writerow([type])
             writer.writerow(header + ["time"])
-            writer.writerow([axis_label] * len(lists) + ["time"])
+            writer.writerow([axis_label] * len(header) + ["time"])
             writer.writerow(label)
             for row in zip(*lists, self.time):
-                writer.writerow(row)
+                processed_row = []
+                for element in row:
+                    if isinstance(element, np.ndarray):
+                        processed_row += element.tolist()
+                    else:
+                        processed_row.append(element)
+                writer.writerow(processed_row)
