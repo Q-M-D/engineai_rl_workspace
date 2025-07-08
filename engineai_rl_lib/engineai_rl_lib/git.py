@@ -57,12 +57,10 @@ def checkout_commit_or_branch(repo, commit, branch):
 
 
 def save_patch(file):
-    result = subprocess.run(["git", "diff"], capture_output=True, text=True)
+    with open(file, "w") as f:
+        result = subprocess.run(["git", "diff"], stdout=f)
 
     if result.returncode == 0:
-        # Write the diff output to the patch file
-        with open(file, "w") as f:
-            f.write(result.stdout)
         print(f"Patch saved to {file}")
     else:
         print("Error running git diff:")
