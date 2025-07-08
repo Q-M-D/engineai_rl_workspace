@@ -3,7 +3,7 @@ import os
 import yaml
 import importlib
 from engineai_gym import ENGINEAI_GYM_ROOT_DIR
-from engineai_gym.tester.testers.tester_base import TesterTypeBase
+from engineai_gym.tester.testers.tester_type_base import TesterTypeBase
 from engineai_rl_lib.files_and_dirs import get_module_path_from_files_in_dir
 from engineai_rl_lib.class_operations import (
     instance_name_to_class_name,

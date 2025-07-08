@@ -1,4 +1,4 @@
-from .tester_base import TesterTypeBase
+from .tester_type_base import TesterTypeBase
 
 
 class TesterZeroCommands(TesterTypeBase):
