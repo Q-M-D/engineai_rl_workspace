@@ -50,21 +50,55 @@ def get_current_commit_and_branch(repo):
 
 
 def checkout_commit_or_branch(repo, commit, branch):
+    untracked_files = repo.untracked_files
+    # Delete untracked files
+    for f in untracked_files:
+        print(f"Deleting: {f}")
+        os.remove(os.path.join(repo.working_tree_dir, f))
     if branch is not None:
         repo.git.checkout(branch, force=True)
     else:
         repo.git.checkout(commit, force=True)
 
 
-def save_patch(file):
-    with open(file, "w") as f:
-        result = subprocess.run(["git", "diff"], stdout=f)
+def save_patch(patch_file):
+    # Get unstaged changes
+    with open(patch_file, "w") as f:
+        unstaged = subprocess.run(["git", "diff"], stdout=subprocess.PIPE)
+        f.write(unstaged.stdout.decode())
 
-    if result.returncode == 0:
-        print(f"Patch saved to {file}")
+    # Get staged changes
+    with open(patch_file, "a") as f:
+        staged = subprocess.run(["git", "diff", "--cached"], stdout=subprocess.PIPE)
+        f.write(staged.stdout.decode())
+
+    # Get untracked files
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"], stdout=subprocess.PIPE
+    )
+    for file in untracked.stdout.decode().splitlines():
+        diff = subprocess.run(
+            ["git", "diff", "--no-index", "/dev/null", file], stdout=subprocess.PIPE
+        )
+        with open(patch_file, "a") as f:
+            f.write(diff.stdout.decode())
+
+    if (
+        unstaged.returncode == 0
+        and staged.returncode == 0
+        and untracked.returncode == 0
+    ):
+        print(f"Patch saved to {patch_file}")
     else:
-        print("Error running git diff:")
-        print(result.stderr)
+        if unstaged.returncode != 0:
+            print("Error running git diff:")
+            print(unstaged.stderr)
+        if staged.returncode != 0:
+            print("Error running git diff:")
+            print(staged.stderr)
+        if untracked.returncode != 0:
+            print("Error running git diff:")
+            print(untracked.stderr)
 
 
 def apply_patch(file, repo_path):
