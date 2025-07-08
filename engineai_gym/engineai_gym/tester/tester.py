@@ -84,8 +84,8 @@ class Tester:
         for logger in tester.loggers:
             logger.log_data(extra_data)
 
-    def set_env(self, idx):
-        return self.get_current_tester(idx).set_commands()
+    def set_goals(self, idx):
+        return self.get_current_tester(idx).set_goals()
 
     def get_current_tester(self, idx):
         if idx // self.length < self.num_testers:

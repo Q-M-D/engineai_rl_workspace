@@ -141,7 +141,7 @@ async def play(args):
             set_goals_callback_args=(env, x_vel_cmd, y_vel_cmd, yaw_vel_cmd),
         )
     else:
-        inputs = runner.reset(tester.set_env, set_goals_callback_args=(0,))
+        inputs = runner.reset(tester.set_goals, set_goals_callback_args=(0,))
     for iter in iteration_range:
         if args.use_joystick:
             inputs, actions, _, _, _ = runner.step(
@@ -153,7 +153,10 @@ async def play(args):
         else:
             if iter + 1 < tester.num_testers * args.test_length:
                 inputs, actions, _, _, _ = runner.step(
-                    inputs, policy, tester.set_env, set_goals_callback_args=(iter + 1,)
+                    inputs,
+                    policy,
+                    tester.set_goals,
+                    set_goals_callback_args=(iter + 1,),
                 )
         if MOVE_CAMERA:
             camera_position += camera_vel * env.dt

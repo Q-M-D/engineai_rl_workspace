@@ -3,6 +3,6 @@ from engineai_rl_lib.command_filter import convert_to_visible_commands
 
 
 class TesterNormalCommands(TesterTypeBase):
-    def set_commands(self) -> None:
+    def set_goals(self) -> None:
         convert_to_visible_commands(self.env.commands)
         return self.env.goal_dict

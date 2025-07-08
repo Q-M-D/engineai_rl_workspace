@@ -16,7 +16,7 @@ class TesterTypeBase(ABC):
                 logger_class(key, env, time, os.path.join(test_dir, name), extra_args)
             )
 
-    def set_commands(self):
+    def set_goals(self):
         return self.env.goal_dict
 
     def start_record_video(self):
