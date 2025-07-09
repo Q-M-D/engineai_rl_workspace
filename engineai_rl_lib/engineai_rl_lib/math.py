@@ -4,6 +4,7 @@ import numpy as np
 from isaacgym.torch_utils import quat_apply, normalize, get_euler_xyz
 from typing import Tuple
 from scipy.spatial.transform import Rotation as R
+import copy
 
 
 def ang_vel_interpolation(rot_c, rot_n, delta_t):
@@ -52,72 +53,39 @@ def torch_rand_sqrt_float(lower, upper, shape, device):
     return (upper - lower) * r + lower
 
 
-@torch.jit.script
-def slerp(
-    q0, q1, fraction, eps: float = 1e-14, spin: int = 0, shortestpath: bool = True
-):
+def slerp(q0, q1, fraction, eps=np.finfo(float).eps * 4.0, spin=0, shortestpath=True):
     """Batch quaternion spherical linear interpolation."""
 
-    # Ensure inputs have the same shape and are properly batched
-    if q0.dim() != q1.dim():
-        raise RuntimeError("q0 and q1 must have the same number of dimensions")
-
-    # Create output tensor with the same shape as inputs
     out = torch.zeros_like(q0)
 
-    # Ensure fraction is properly shaped for broadcasting
-    if fraction.dim() == 1:
-        fraction = fraction.unsqueeze(-1)
+    zero_mask = torch.isclose(fraction, torch.zeros_like(fraction)).squeeze()
+    ones_mask = torch.isclose(fraction, torch.ones_like(fraction)).squeeze()
+    out[zero_mask] = q0[zero_mask]
+    out[ones_mask] = q1[ones_mask]
 
-    # Handle edge cases first - reshape masks to match tensor dimensions
-    zero_mask = torch.isclose(fraction, torch.zeros_like(fraction))
-    ones_mask = torch.isclose(fraction, torch.ones_like(fraction))
-
-    # Ensure masks have the same shape for broadcasting
-    while zero_mask.dim() < q0.dim():
-        zero_mask = zero_mask.unsqueeze(-1)
-    while ones_mask.dim() < q0.dim():
-        ones_mask = ones_mask.unsqueeze(-1)
-
-    # Apply masks
-    out = torch.where(zero_mask, q0, out)
-    out = torch.where(ones_mask, q1, out)
-
-    # Calculate dot product
-    d = torch.sum(q0 * q1, dim=-1, keepdim=True)
-    d = torch.clamp(d, -1.0, 1.0)
-
-    # Handle very close quaternions
-    dist_mask = (torch.abs(torch.abs(d) - 1.0) < eps).squeeze(-1)
-    dist_mask = dist_mask.unsqueeze(-1)
-    out = torch.where(dist_mask, q0, out)
+    d = torch.sum(q0 * q1, dim=-1, keepdims=True)
+    dist_mask = (torch.abs(torch.abs(d) - 1.0) < eps).squeeze()
+    out[dist_mask] = q0[dist_mask]
 
     if shortestpath:
-        d_old = d.clone()
+        d_old = copy.copy(d)
         d = torch.where(d_old < 0, -d, d)
         q1 = torch.where(d_old < 0, -q1, q1)
 
     angle = torch.arccos(d) + spin * torch.pi
+    angle_mask = (torch.abs(angle) < eps).squeeze()
+    out[angle_mask] = q0[angle_mask]
 
-    # Handle small angles with linear interpolation
-    small_angle_mask = torch.abs(angle) < eps
-    lerp = (1.0 - fraction) * q0 + fraction * q1
-    out = torch.where(small_angle_mask, lerp, out)
+    final_mask = torch.logical_or(zero_mask, ones_mask)
+    final_mask = torch.logical_or(final_mask, dist_mask)
+    final_mask = torch.logical_or(final_mask, angle_mask)
+    final_mask = torch.logical_not(final_mask)
 
-    # Calculate remaining cases
-    valid_mask = ~(zero_mask | ones_mask | dist_mask | small_angle_mask)
-
-    # Safe division with small angle protection
-    isin = torch.where(angle > eps, 1.0 / angle, torch.ones_like(angle))
-
-    # Calculate the interpolation for valid cases
-    valid_result = (
-        torch.sin((1.0 - fraction) * angle) * q0 + torch.sin(fraction * angle) * q1
-    ) * isin
-
-    # Apply valid results
-    out = torch.where(valid_mask, valid_result, out)
-
+    isin = 1.0 / angle
+    q0 *= torch.sin((1.0 - fraction) * angle) * isin
+    q1 *= torch.sin(fraction * angle) * isin
+    q0 += q1
+    out[final_mask] = q0[final_mask]
     return out
 
 
