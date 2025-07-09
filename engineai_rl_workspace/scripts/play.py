@@ -81,7 +81,7 @@ async def play(args):
     print(INITIALIZATION_COMPLETE_MESSAGE)
 
     # override some parameters for testing
-    if args.use_joystick or args.headless:
+    if args.use_joystick:
         env_cfg.env.num_envs = 1
 
     # prepare environment
