@@ -83,8 +83,6 @@ async def play(args):
     # override some parameters for testing
     if args.use_joystick or args.headless:
         env_cfg.env.num_envs = 1
-    else:
-        env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
 
     # prepare environment
     env = exp_registry.make_env(

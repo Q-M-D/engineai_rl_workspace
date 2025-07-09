@@ -189,14 +189,14 @@ class ExpRegistry:
             log_root = os.path.join(
                 ENGINEAI_WORKSPACE_ROOT_DIR, "logs", name, args.sub_exp_name
             )
+        # override cfg from args (if specified)
+        env_cfg, _ = update_cfg_from_args(env_cfg, None, args)
+        # override cfg from args (if specified)
+        _, algo_cfg = update_cfg_from_args(None, algo_cfg, args)
         if args.resume or args.run_exist:
             log_dir, load_run = get_load_run_path(log_root, args.load_run)
             algo_cfg.runner.run_name = load_run
         else:
-            # override cfg from args (if specified)
-            env_cfg, _ = update_cfg_from_args(env_cfg, None, args)
-            # override cfg from args (if specified)
-            _, algo_cfg = update_cfg_from_args(None, algo_cfg, args)
             if not hasattr(algo_cfg.runner, "run_name"):
                 algo_cfg.runner.run_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             if log_root is None:
