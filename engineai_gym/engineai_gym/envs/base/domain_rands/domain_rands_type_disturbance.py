@@ -20,7 +20,9 @@ class DomainRandsTypeDisturbance(DomainRandsBase):
             )
 
     def init_rand_vec_on_step(self):
-        if self.env.cfg.domain_rands.disturbance.push_robots:
+        if self.env.cfg.domain_rands.disturbance.push_robots and (
+            self.env.common_step_counter % self.push_interval == 0
+        ):
             max_vel = self.env.cfg.domain_rands.disturbance.max_push_vel_xy
             self.rand_push_force[:, :2] = torch_rand_float(
                 -max_vel, max_vel, (self.env.num_envs, 2), device=self.env.device
