@@ -48,7 +48,7 @@ class EnvBase:
         self.rewards = reward_class(self)
         # allocate buffers
         self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
-        self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
+        self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.bool)
         self.episode_length_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.long
         )
