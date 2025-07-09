@@ -102,7 +102,8 @@ def save_patch(patch_file):
 
 
 def apply_patch(file, repo_path):
-    subprocess.run(["git", "apply", file], cwd=repo_path)
+    if os.path.getsize(file) != 0:
+        subprocess.run(["git", "apply", file], cwd=repo_path)
 
 
 def stash_files(repo):
