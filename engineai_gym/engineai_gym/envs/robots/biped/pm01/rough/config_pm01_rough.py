@@ -173,6 +173,7 @@ class ConfigPm01Rough(ConfigBipedRobot):
 
     class asset(ConfigBipedRobot.asset):
         file = "{ENGINEAI_GYM_PACKAGE_DIR}/resources/robots/biped/pm01/urdf/pm01_only_legs_simple_collision.urdf"
+
         name = "pm01"
         foot_name = "link_ankle_roll"
         knee_name = "link_knee_pitch"
@@ -188,7 +189,17 @@ class ConfigPm01Rough(ConfigBipedRobot):
         foot_half_z_size = 0.0463
         flip_visual_attachments = False
         replace_cylinder_with_capsule = False
-        joint_armature = {"hip": 0.03, "knee": 0.03, "ankle": 0.0025}
+        joint_armature = {
+            "hip_pitch": 0.0453,
+            "hip_roll": 0.0453,
+            "hip_yaw": 0.0067,
+            "knee": 0.0453,
+            "ankle": 0.0067,
+            "waist": 0.0067,
+            "shoulder": 0.0067,
+            "elbow": 0.0067,
+            "head": 0.0067,
+        }
         joint_friction = {"hip": 0, "knee": 0, "ankle": 0}
 
     class commands(ConfigBipedRobot.commands):
