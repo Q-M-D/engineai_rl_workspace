@@ -173,18 +173,6 @@ async def export_policy(args):
             ),
         )
 
-    # 保存配置
-    config = {
-        "exp_name": args.exp_name,
-        "exp_id": args.load_run,
-        "algo_name": algo_class,
-        "checkpoint": args.checkpoint,
-        "device": args.rl_device,
-    }
-    with open(os.path.join(path, "config.json"), "w") as f:
-        json.dump(config, f, indent=4)
-    print("配置保存成功")
-
 
 if __name__ == "__main__":
     global lock, original_files
