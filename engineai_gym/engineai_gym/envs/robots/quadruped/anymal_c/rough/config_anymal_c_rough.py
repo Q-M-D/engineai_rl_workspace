@@ -73,7 +73,7 @@ class ConfigAnymalCRough(ConfigLeggedRobot):
             base_height_target = 0.5
             max_contact_force = 500.0
             only_positive_rewards = True
-            soft_torque_limit_multi = {"HAA": 1.0, "HFE": 1.0, "KFE": 1.0}
+            soft_dof_torque_limit_multi = {"HAA": 1.0, "HFE": 1.0, "KFE": 1.0}
 
         class scales(ConfigLeggedRobot.rewards.scales):
             pass

@@ -56,7 +56,7 @@ class ConfigA1Rough(ConfigLeggedRobot):
         class params(ConfigLeggedRobot.rewards.params):
             soft_dof_pos_limit_multi = 0.9
             base_height_target = 0.25
-            soft_torque_limit_multi = {"hip": 1.0, "thigh": 1.0, "calf": 1.0}
+            soft_dof_torque_limit_multi = {"hip": 1.0, "thigh": 1.0, "calf": 1.0}
 
         class scales(ConfigLeggedRobot.rewards.scales):
             torques = -0.0002

@@ -269,7 +269,7 @@ class ConfigLeggedRobot(BaseConfig):
             # multiplier of URDF limits, values above this limit are penalized
             soft_dof_pos_limit_multi = 1.0
             soft_dof_vel_limit_multi = 1.0
-            soft_torque_limit_multi = {
+            soft_dof_torque_limit_multi = {
                 "joint": 1.0,
             }
             base_height_target = 1.0

@@ -254,7 +254,7 @@ class ConfigSa01Rough(ConfigBipedRobot):
             tracking_sigma = 5
             target_joint_pos_scale = 0.26
             target_feet_height = 0.1
-            soft_torque_limit_multi = {"joint": 0.9}
+            soft_dof_torque_limit_multi = {"joint": 0.9}
 
         class scales(ConfigBipedRobot.rewards.scales):
             torques = -1e-10

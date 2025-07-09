@@ -50,13 +50,13 @@ class RewardsTypeDof(RewardsBase):
     def reward_torque_limits(self):
         # penalize torques too close to the limit
         soft_torque_limit = torch.ones_like(self.env.torque_limits)
-        if self.env.cfg.rewards.params.soft_torque_limit_multi is not None:
+        if self.env.cfg.rewards.params.soft_dof_torque_limit_multi is not None:
             for i in range(self.env.num_dofs):
-                for dof_type in self.env.cfg.rewards.params.soft_torque_limit_multi:
+                for dof_type in self.env.cfg.rewards.params.soft_dof_torque_limit_multi:
                     if dof_type in self.env.dof_names[i]:
                         soft_torque_limit[
                             i
-                        ] = self.env.cfg.rewards.params.soft_torque_limit_multi[
+                        ] = self.env.cfg.rewards.params.soft_dof_torque_limit_multi[
                             dof_type
                         ]
         return torch.sum(

@@ -224,7 +224,7 @@ class ConfigPm01Rough(ConfigBipedRobot):
             tracking_sigma = 5
             target_joint_pos_scale = 0.26
             target_feet_height = 0.1
-            soft_torque_limit_multi = {
+            soft_dof_torque_limit_multi = {
                 "hip": 0.85,
                 "knee": 0.85,
                 "ankle": 0.85,
