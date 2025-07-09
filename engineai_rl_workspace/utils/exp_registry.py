@@ -35,7 +35,6 @@ class ExpRegistry:
         self.runner_classes = {}
         self.algo_classes = {}
         self.algo_cfgs = {}
-        self.log_dir = os.path.join(ENGINEAI_WORKSPACE_ROOT_DIR, "logs")
 
     def register(
         self,
@@ -247,20 +246,6 @@ class ExpRegistry:
             env_cfg,
             algo_cfg,
         )
-
-    def _get_log_dir(self, exp_name: str, exp_id: str) -> str:
-        """获取实验日志目录"""
-        # 使用 os.path.join 替代字符串拼接
-        log_dir = os.path.join(self.log_dir, exp_name, exp_id)
-        os.makedirs(log_dir, exist_ok=True)
-        return log_dir
-
-    def _get_checkpoint_dir(self, exp_name: str, exp_id: str) -> str:
-        """获取检查点目录"""
-        # 使用 os.path.join 替代字符串拼接
-        checkpoint_dir = os.path.join(self.log_dir, exp_name, exp_id, "checkpoints")
-        os.makedirs(checkpoint_dir, exist_ok=True)
-        return checkpoint_dir
 
 
 # make global task registry
