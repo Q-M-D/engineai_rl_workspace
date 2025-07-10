@@ -42,11 +42,11 @@ class RunnerBase(ABC):
         self.param_cfg = algo_cfg["params"]
         self.policy_cfg = algo_cfg["policy"]
 
-    def init_runner(self, algo_class, log_dir):
+    def init_runner(self, algo_class, log_dir, logger=False):
         networks = self.init_network()
         self.init_algo(algo_class, networks)
         self.init_logger(log_dir)
-        self.init_writer()
+        self.init_writer(logger)
 
     def init_logger(self, log_dir):
         # Log
@@ -185,9 +185,9 @@ class RunnerBase(ABC):
             print(f"Synchronizing parameters for rank {self.gpu_global_rank}...")
             self.algo.broadcast_parameters()
 
-    def init_writer(self):
+    def init_writer(self, logger):
         # initialize writer
-        if not self.debug:
+        if not self.debug and logger:
             if (
                 self.log_dir is not None
                 and self.writer is None

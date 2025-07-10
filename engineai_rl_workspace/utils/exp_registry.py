@@ -129,7 +129,7 @@ class ExpRegistry:
         )
         return env
 
-    def make_alg_runner(self, env, name, args, log_dir):
+    def make_alg_runner(self, env, name, args, log_dir, logger=False):
         """Creates the training algorithm  either from a registered name or from the provided config file.
 
         Args:
@@ -137,6 +137,7 @@ class ExpRegistry:
             name (string): Name of a registered env. If None, the config file will be used instead. Defaults to None.
             args (Args): Isaac Gym command line arguments. If None get_args() will be called. Defaults to None.
             log_dir (str): Logging directory.
+            logger (bool): If True, the logger will be created. Defaults to False.
 
         Returns:
             Runner: runner for the run
@@ -159,7 +160,9 @@ class ExpRegistry:
             debug=args.debug,
         )
         runner.get_cfg(algo_cfg_dict)
-        runner.init_runner(algo_class=self.algo_classes[args.exp_name], log_dir=log_dir)
+        runner.init_runner(
+            algo_class=self.algo_classes[args.exp_name], log_dir=log_dir, logger=logger
+        )
         # save resume path before creating a new log_dir
 
         if args.resume:

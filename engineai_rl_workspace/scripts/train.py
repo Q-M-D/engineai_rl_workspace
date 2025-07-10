@@ -139,7 +139,7 @@ async def train(args):
             camera_rotation=args.camera_rotation,
             video_path=os.path.join(log_dir, "train_videos"),
         )
-    ppo_runner = exp_registry.make_alg_runner(env, args.exp_name, args, log_dir)
+    ppo_runner = exp_registry.make_alg_runner(env, args.exp_name, args, log_dir, True)
     ppo_runner.learn(
         num_learning_iterations=algo_cfg.runner.max_iterations,
         init_at_random_ep_len=True,
