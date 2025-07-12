@@ -5,18 +5,18 @@ class ConfigDora2Rough(ConfigBipedRobot):
     class env(ConfigBipedRobot.env):
         num_envs = 2048
         action_joints = [
-            "leg_l1_joint",
-            "leg_l2_joint",
-            "leg_l3_joint",
-            "leg_l4_joint",
-            "leg_l5_joint",
-            "leg_l6_joint",
-            "leg_r1_joint",
-            "leg_r2_joint",
-            "leg_r3_joint",
-            "leg_r4_joint",
-            "leg_r5_joint",
-            "leg_r6_joint",
+            "l_leg_hip_roll_joint",
+            "l_leg_hip_yaw_joint",
+            "l_leg_hip_pitch_joint",
+            "l_leg_knee_joint",
+            "l_leg_ankle_pitch_joint",
+            "l_leg_ankle_roll_joint",
+            "r_leg_hip_roll_joint",
+            "r_leg_hip_yaw_joint",
+            "r_leg_hip_pitch_joint",
+            "r_leg_knee_joint",
+            "r_leg_ankle_pitch_joint",
+            "r_leg_ankle_roll_joint",
         ]
         obs_list = [
             "base_lin_vel",
@@ -50,18 +50,18 @@ class ConfigDora2Rough(ConfigBipedRobot):
         pos = [0.0, 0.0, 0.95]
 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
-            "leg_l1_joint": 0.0,
-            "leg_l2_joint": 0.0,
-            "leg_l3_joint": -0.24,
-            "leg_l4_joint": 0.48,
-            "leg_l5_joint": -0.24,
-            "leg_l6_joint": 0.0,
-            "leg_r1_joint": 0.0,
-            "leg_r2_joint": 0.0,
-            "leg_r3_joint": -0.24,
-            "leg_r4_joint": 0.48,
-            "leg_r5_joint": -0.24,
-            "leg_r6_joint": 0.0,
+            "l_leg_hip_roll_joint": 0.0,
+            "l_leg_hip_yaw_joint": 0.0,
+            "l_leg_hip_pitch_joint": -0.24,
+            "l_leg_knee_joint": 0.48,
+            "l_leg_ankle_pitch_joint": -0.24,
+            "l_leg_ankle_roll_joint": 0.0,
+            "r_leg_hip_roll_joint": 0.0,
+            "r_leg_hip_yaw_joint": 0.0,
+            "r_leg_hip_pitch_joint": -0.24,
+            "r_leg_knee_joint": 0.48,
+            "r_leg_ankle_pitch_joint": -0.24,
+            "r_leg_ankle_roll_joint": 0.0,
         }
 
     class control(ConfigBipedRobot.control):
@@ -122,36 +122,36 @@ class ConfigDora2Rough(ConfigBipedRobot):
             randomize_joint_friction_each_joint = False
             joint_friction_multi_range = [0.01, 1.15]
             joint_friction_multi_range_each_joint = {
-                "leg_l1_joint": [0.01, 1.15],
-                "leg_l2_joint": [0.01, 1.15],
-                "leg_l3_joint": [0.01, 1.15],
-                "leg_l4_joint": [0.01, 1.15],
-                "leg_l5_joint": [0.5, 1.3],
-                "leg_l6_joint": [0.5, 1.3],
-                "leg_r1_joint": [0.01, 1.15],
-                "leg_r2_joint": [0.01, 1.15],
-                "leg_r3_joint": [0.01, 1.15],
-                "leg_r4_joint": [0.01, 1.15],
-                "leg_r5_joint": [0.5, 1.3],
-                "leg_r6_joint": [0.5, 1.3],
+                "l_leg_hip_roll_joint": [0.01, 1.15],
+                "l_leg_hip_yaw_joint": [0.01, 1.15],
+                "l_leg_hip_pitch_joint": [0.01, 1.15],
+                "l_leg_knee_joint": [0.01, 1.15],
+                "l_leg_ankle_pitch_joint": [0.5, 1.3],
+                "l_leg_ankle_roll_joint": [0.5, 1.3],
+                "r_leg_hip_roll_joint": [0.01, 1.15],
+                "r_leg_hip_yaw_joint": [0.01, 1.15],
+                "r_leg_hip_pitch_joint": [0.01, 1.15],
+                "r_leg_knee_joint": [0.01, 1.15],
+                "r_leg_ankle_pitch_joint": [0.5, 1.3],
+                "r_leg_ankle_roll_joint": [0.5, 1.3],
             }
 
             randomize_joint_armature = True
             randomize_joint_armature_each_joint = True
             joint_armature_multi_range = [0.27, 2]
             joint_armature_multi_range_each_joint = {
-                "leg_l1_joint": [0.27, 2],
-                "leg_l2_joint": [0.27, 2],
-                "leg_l3_joint": [0.27, 2],
-                "leg_l4_joint": [0.27, 2],
-                "leg_l5_joint": [0.28, 2],
-                "leg_l6_joint": [0.28, 2],
-                "leg_r1_joint": [0.27, 2],
-                "leg_r2_joint": [0.27, 2],
-                "leg_r3_joint": [0.27, 2],
-                "leg_r4_joint": [0.27, 2],
-                "leg_r5_joint": [0.28, 2],
-                "leg_r6_joint": [0.28, 2],
+                "l_leg_hip_roll_joint": [0.27, 2],
+                "l_leg_hip_yaw_joint": [0.27, 2],
+                "l_leg_hip_pitch_joint": [0.27, 2],
+                "l_leg_knee_joint": [0.27, 2],
+                "l_leg_ankle_pitch_joint": [0.28, 2],
+                "l_leg_ankle_roll_joint": [0.28, 2],
+                "r_leg_hip_roll_joint": [0.27, 2],
+                "r_leg_hip_yaw_joint": [0.27, 2],
+                "r_leg_hip_pitch_joint": [0.27, 2],
+                "r_leg_knee_joint": [0.27, 2],
+                "r_leg_ankle_pitch_joint": [0.28, 2],
+                "r_leg_ankle_roll_joint": [0.28, 2],
             }
 
             randomize_coulomb_friction = False
@@ -181,43 +181,45 @@ class ConfigDora2Rough(ConfigBipedRobot):
             max_push_ang_vel = 0.6
 
     class asset(ConfigBipedRobot.asset):
-        file = "{ENGINEAI_GYM_PACKAGE_DIR}/resources/robots/biped/dora2/dora2.urdf"
+        file = (
+            "{ENGINEAI_GYM_PACKAGE_DIR}/resources/robots/biped/dora2/urdf/dora2.urdf"
+        )
 
         name = "dora2"
-        foot_name = "leg_l6_link"
-        knee_name = "leg_l4_link"
+        foot_name = "l_leg_ankle_roll_Link"
+        knee_name = "l_leg_knee_Link"
 
-        terminate_after_contacts_on = ["base_link", "leg_l4_link"]
+        terminate_after_contacts_on = ["base_link", "l_leg_knee_Link"]
         penalize_contacts_on = ["base_link"]
         flip_visual_attachments = False
         replace_cylinder_with_capsule = False
         joint_armature = {
-            "leg_l1_joint": 0.03,
-            "leg_l2_joint": 0.03,
-            "leg_l3_joint": 0.03,
-            "leg_l4_joint": 0.03,
-            "leg_l5_joint": 0.0025,
-            "leg_l6_joint": 0.0025,
-            "leg_r1_joint": 0.03,
-            "leg_r2_joint": 0.03,
-            "leg_r3_joint": 0.03,
-            "leg_r4_joint": 0.03,
-            "leg_r5_joint": 0.0025,
-            "leg_r6_joint": 0.0025,
+            "l_leg_hip_roll_joint": 0.03,
+            "l_leg_hip_yaw_joint": 0.03,
+            "l_leg_hip_pitch_joint": 0.03,
+            "l_leg_knee_joint": 0.03,
+            "l_leg_ankle_pitch_joint": 0.0025,
+            "l_leg_ankle_roll_joint": 0.0025,
+            "r_leg_hip_roll_joint": 0.03,
+            "r_leg_hip_yaw_joint": 0.03,
+            "r_leg_hip_pitch_joint": 0.03,
+            "r_leg_knee_joint": 0.03,
+            "r_leg_ankle_pitch_joint": 0.0025,
+            "r_leg_ankle_roll_joint": 0.0025,
         }
         joint_friction = {
-            "leg_l1_joint": 0,
-            "leg_l2_joint": 0,
-            "leg_l3_joint": 0,
-            "leg_l4_joint": 0,
-            "leg_l5_joint": 0,
-            "leg_l6_joint": 0,
-            "leg_r1_joint": 0,
-            "leg_r2_joint": 0,
-            "leg_r3_joint": 0,
-            "leg_r4_joint": 0,
-            "leg_r5_joint": 0,
-            "leg_r6_joint": 0,
+            "l_leg_hip_roll_joint": 0,
+            "l_leg_hip_yaw_joint": 0,
+            "l_leg_hip_pitch_joint": 0,
+            "l_leg_knee_joint": 0,
+            "l_leg_ankle_pitch_joint": 0,
+            "l_leg_ankle_roll_joint": 0,
+            "r_leg_hip_roll_joint": 0,
+            "r_leg_hip_yaw_joint": 0,
+            "r_leg_hip_pitch_joint": 0,
+            "r_leg_knee_joint": 0,
+            "r_leg_ankle_pitch_joint": 0,
+            "r_leg_ankle_roll_joint": 0,
         }
 
     class commands(ConfigBipedRobot.commands):
