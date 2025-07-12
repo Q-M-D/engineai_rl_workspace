@@ -47,7 +47,7 @@ class ConfigDora2Rough(ConfigBipedRobot):
         terrain_proportions = [0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1]
 
     class init_state(ConfigBipedRobot.init_state):
-        pos = [0.0, 0.0, 0.95]
+        pos = [0.0, 0.0, 0.8]
 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             "l_leg_hip_roll_joint": 0.0,
@@ -69,20 +69,20 @@ class ConfigDora2Rough(ConfigBipedRobot):
         control_type = "P"
 
         stiffness = {
-            "1_joint": 50,
-            "2_joint": 50,
-            "3_joint": 70,
-            "4_joint": 70,
-            "5_joint": 20,
-            "6_joint": 20,
+            "hip_roll_joint": 80,
+            "hip_yaw_joint": 80,
+            "hip_pitch_joint": 80,
+            "knee_joint": 80,
+            "ankle_pitch_joint": 10,
+            "ankle_roll_joint": 10,
         }
         damping = {
-            "1_joint": 5.0,
-            "2_joint": 5.0,
-            "3_joint": 7.0,
-            "4_joint": 7.0,
-            "5_joint": 0.2,
-            "6_joint": 0.2,
+            "hip_roll_joint": 4.0,
+            "hip_yaw_joint": 4.0,
+            "hip_pitch_joint": 4.0,
+            "knee_joint": 4.0,
+            "ankle_pitch_joint": 0.5,
+            "ankle_roll_joint": 0.5,
         }
 
         # action scale: target angle = actionScale * action + defaultAngle
@@ -186,26 +186,26 @@ class ConfigDora2Rough(ConfigBipedRobot):
         )
 
         name = "dora2"
-        foot_name = "l_leg_ankle_roll_Link"
-        knee_name = "l_leg_knee_Link"
+        foot_name = "ankle_roll_Link"
+        knee_name = "knee_Link"
 
-        terminate_after_contacts_on = ["base_link", "l_leg_knee_Link"]
+        terminate_after_contacts_on = ["base_link", "l_leg_knee_Link", "r_leg_knee_Link"]
         penalize_contacts_on = ["base_link"]
         flip_visual_attachments = False
         replace_cylinder_with_capsule = False
         joint_armature = {
-            "l_leg_hip_roll_joint": 0.03,
-            "l_leg_hip_yaw_joint": 0.03,
-            "l_leg_hip_pitch_joint": 0.03,
-            "l_leg_knee_joint": 0.03,
-            "l_leg_ankle_pitch_joint": 0.0025,
-            "l_leg_ankle_roll_joint": 0.0025,
-            "r_leg_hip_roll_joint": 0.03,
-            "r_leg_hip_yaw_joint": 0.03,
-            "r_leg_hip_pitch_joint": 0.03,
-            "r_leg_knee_joint": 0.03,
-            "r_leg_ankle_pitch_joint": 0.0025,
-            "r_leg_ankle_roll_joint": 0.0025,
+            "l_leg_hip_roll_joint": 0.01,
+            "l_leg_hip_yaw_joint": 0.04,
+            "l_leg_hip_pitch_joint": 0.04,
+            "l_leg_knee_joint": 0.04,
+            "l_leg_ankle_pitch_joint": 0.002,
+            "l_leg_ankle_roll_joint": 0.002,
+            "r_leg_hip_roll_joint": 0.01,
+            "r_leg_hip_yaw_joint": 0.04,
+            "r_leg_hip_pitch_joint": 0.04,
+            "r_leg_knee_joint": 0.04,
+            "r_leg_ankle_pitch_joint": 0.002,
+            "r_leg_ankle_roll_joint": 0.002,
         }
         joint_friction = {
             "l_leg_hip_roll_joint": 0,
@@ -251,7 +251,7 @@ class ConfigDora2Rough(ConfigBipedRobot):
 
     class rewards(ConfigBipedRobot.rewards):
         class params(ConfigBipedRobot.rewards.params):
-            base_height_target = 0.875
+            base_height_target = 0.75
             max_contact_force = 500.0
             tracking_sigma = 5
             target_joint_pos_scale = 0.26
@@ -292,4 +292,4 @@ class ConfigDora2Rough(ConfigBipedRobot):
             feet_clearance = 1.6
 
     class sim(ConfigBipedRobot.sim):
-        dt = 0.001  # 200 Hz 1000 Hz
+        dt = 0.001  # 1000 Hz
