@@ -246,7 +246,6 @@ class ConfigDora2Rough(ConfigBipedRobot):
             "dof_vel": 0.05,
             "base_euler_xyz": 1.0,
             "height_measurements": 5.0,
-            "body_mass": 0.1,
         }
 
     class rewards(ConfigBipedRobot.rewards):
