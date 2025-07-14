@@ -177,6 +177,7 @@ def set_commands_from_joystick(env, x_vel_cmd, y_vel_cmd, yaw_vel_cmd):
         last_x_vel_cmd = x_vel_cmd
         last_y_vel_cmd = y_vel_cmd
         last_yaw_vel_cmd = yaw_vel_cmd
+    return env.goal_dict
 
 
 def use_joystick(args):
