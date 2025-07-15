@@ -286,6 +286,7 @@ class ConfigDora2Rough(ConfigBipedRobot):
             default_joint_pos = 0.8
             feet_height = -0.0
             low_speed = 0.2
+            low_speed_y = 0.2
             action_smoothness = -0.003
             feet_contact_number = 1.4
             feet_clearance = 1.6
