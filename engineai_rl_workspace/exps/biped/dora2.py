@@ -1,3 +1,4 @@
+from engineai_gym.envs.robots.biped.dora2.config_dora2_shoes_rough import ConfigDora2ShoesRough
 from engineai_rl_workspace.utils.exp_registry import exp_registry
 
 from engineai_gym.envs.robots.biped.dora2.config_dora2_rough import ConfigDora2Rough
@@ -13,6 +14,16 @@ exp_registry.register(
     goal_class=GoalsBiped,
     reward_class=RewardsBiped,
     env_cfg=ConfigDora2Rough(),
+    algo_class=Ppo,
+    algo_cfg=ConfigDora2Ppo(),
+)
+
+exp_registry.register(
+    name="dora2_shoes_rough_ppo",
+    task_class=Dora2,
+    goal_class=GoalsBiped,
+    reward_class=RewardsBiped,
+    env_cfg=ConfigDora2ShoesRough(),
     algo_class=Ppo,
     algo_cfg=ConfigDora2Ppo(),
 )
