@@ -8,26 +8,45 @@ class AttentionNetwork(NetworkBase):
         self,
         num_input_dim,
         num_output_dim,
-        hidden_dim=128,
-        num_heads=4,
-        num_layers=2,
+        num_heads=1,
         orthogonal_init=False,
         normalizer=None,
+        obs_history_length=1,
     ):
         super().__init__(num_input_dim, num_output_dim, orthogonal_init, normalizer)
-        self.embed = nn.Linear(num_input_dim, hidden_dim)
-        self.attn_layers = nn.ModuleList(
-            [nn.MultiheadAttention(hidden_dim, num_heads) for _ in range(num_layers)]
-        )
-        self.head = nn.Linear(hidden_dim, num_output_dim)
+        self.obs_history_length = obs_history_length
+        self.attention_input_dim = obs_history_length
+        self.single_obs_dim = num_input_dim // obs_history_length
+        
+        self.atten = nn.MultiheadAttention(self.attention_input_dim, num_heads)
+        self.head = nn.Linear(self.attention_input_dim, num_output_dim)
         self.activation = nn.ReLU()
 
     def pure_forward(self, x):
-        # x expected shape: (batch, seq_len, dim)
-        x = self.embed(x)
-        x = x.transpose(0, 1)  # seq_len, batch, hidden
-        for attn in self.attn_layers:
-            x, _ = attn(x, x, x)
+        """
+        Pure forward method for the attention network.
+
+        Args:
+            x (tensor): Input tensor of shape (batch_size, contact_input_dim)
+
+        Returns:
+            (tensor, tensor): Output tensor and attention weights
+
+        Description:
+            This method reshapes the input tensor from (batch_size, contact_input_dim) to (batch_size, obs_history_length, single_obs_dim),
+            then transposes it to (batch_size, single_obs_dim, obs_history_length), so that the last dimension corresponds to the observation history for each feature.
+            Then, it applies multi-head attention to the reshaped input, computes the mean across the sequence length, applies a ReLU activation,
+            and finally passes the result through a linear layer to produce the output.
+            The attention weights are also returned.
+        """
+        x = x.reshape(
+            -1, self.obs_history_length, self.single_obs_dim
+        )   # (batch_size, obs_history_length, single_obs_dim)
+        x = x.transpose(1, 2)   # (batch_size, single_obs_dim, obs_history_length)
+        x = x.transpose(0, 1)   # (obs_history_length, batch_size, single_obs_dim) to fit attention input format
+
+        x, attention_weight = self.atten(x, x, x)
         x = x.mean(dim=0)
         x = self.activation(x)
-        return self.head(x)
+        return self.head(x), attention_weight
+
