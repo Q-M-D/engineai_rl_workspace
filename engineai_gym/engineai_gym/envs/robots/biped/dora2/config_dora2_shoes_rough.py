@@ -34,6 +34,7 @@ class ConfigDora2ShoesRough(ConfigBipedRobot):
             "swing_curve",
             "contact_mask",
             "height_measurements",
+            "commands"
         ]
         goal_list = ["gait_phase", "commands"]
         use_ref_actions = False

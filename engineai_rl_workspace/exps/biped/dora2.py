@@ -32,6 +32,17 @@ exp_registry.register(
 )
 
 exp_registry.register(
+    name="dora2_shoes_rough_ppo_contact",
+    task_class=Dora2,
+    goal_class=GoalsBiped,
+    reward_class=RewardsBiped,
+    env_cfg=ConfigDora2ShoesRough(),
+    algo_class=PpoContact,
+    algo_cfg=ConfigDora2PpoContact(),
+    obs_class=ObsDora2,
+)
+
+exp_registry.register(
     name="dora2_shoes_rough_ppo",
     task_class=Dora2,
     goal_class=GoalsBiped,
