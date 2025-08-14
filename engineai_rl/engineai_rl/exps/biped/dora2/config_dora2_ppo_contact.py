@@ -23,17 +23,19 @@ class ConfigDora2PpoContact(ConfigPpoContact):
             goal_list = ["gait_phase", "commands"]
 
             class actor(ConfigPpoContact.input.components.actor):
+                obs_goals_history = True
                 obs_history_length =20
                 obs_list = [
-                    "dof_pos",
-                    "dof_vel",
-                    "actions",
-                    "base_ang_vel",
-                    "base_euler_xyz",
-                    "commands"
+                    "dof_pos",          # 12
+                    "dof_vel",          # 12
+                    "actions",          # 12
+                    "base_ang_vel",     # 3
+                    "base_euler_xyz",   # 3
+                    "contact_mask",     # 2
                 ]
 
             class critic(ConfigPpoContact.input.components.critic):
+                obs_goals_history = True
                 obs_history_length = 3
                 obs_list = [
                     "base_lin_vel",

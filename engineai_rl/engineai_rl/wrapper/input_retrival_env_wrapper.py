@@ -16,7 +16,7 @@ class InputRetrivalEnvWrapper:
         self._input_sizes = self.init_input()
         self.init_obs()
 
-    def reset(self, set_goals_callback=None, set_goals_callback_args=None):
+    def reset(self, contact_net, set_goals_callback=None, set_goals_callback_args=None):
         _, _, infos = self._env.reset()
         if set_goals_callback is not None:
             set_goals_callback(*set_goals_callback_args)
@@ -43,6 +43,16 @@ class InputRetrivalEnvWrapper:
                     -self._obs_cfg["obs_clip_threshold"],
                     self._obs_cfg["obs_clip_threshold"],
                 )
+        
+        # contact estimator part
+        predict_contact, weight = self.predict_contact(
+            obs['contact'], 
+            contact_net, 
+            torch.ones(self._env.num_envs, dtype=torch.bool, device=self.device),
+            goals
+            ) if 'contact' in obs else (None, None)
+        obs = self.update_obs_with_contact(obs, obs_dict, predict_contact)
+        
         inputs = self.get_inputs(
             torch.ones(self._env.num_envs, dtype=torch.bool, device=self.device),
             goals,
@@ -51,7 +61,7 @@ class InputRetrivalEnvWrapper:
         inputs = input_to_device(inputs, self.device)
         return inputs
 
-    def step(self, actions, set_goals_callback=None, set_goals_callback_args=None):
+    def step(self, actions, contact_net=None, set_goals_callback=None, set_goals_callback_args=None):
         obs_dict, goal_dict, rewards, dones, infos = self._env.step(actions)
         if set_goals_callback is not None:
             goal_dict = set_goals_callback(*set_goals_callback_args)
@@ -76,6 +86,16 @@ class InputRetrivalEnvWrapper:
                     -self._obs_cfg["obs_clip_threshold"],
                     self._obs_cfg["obs_clip_threshold"],
                 )
+        
+        # contact estimator part
+        predict_contact, weight = self.predict_contact(
+            obs['contact'], 
+            contact_net, 
+            torch.ones(self._env.num_envs, dtype=torch.bool, device=self.device),
+            goals
+            ) if 'contact' in obs else (None, None)
+        obs = self.update_obs_with_contact(obs, obs_dict, predict_contact)
+        
         next_inputs = self.get_inputs(dones, goals, obs)
         next_inputs, rewards, dones = (
             input_to_device(next_inputs, self.device),
@@ -83,6 +103,108 @@ class InputRetrivalEnvWrapper:
             input_to_device(dones, self.device),
         )
         return next_inputs, actions, dones, infos, rewards
+
+    def predict_contact(self, contact_obs, contact_net, dones, goals):
+        # 1. get stacked contact obs
+        obs_history_tmp = self.obs_history.copy()
+        obs_history_deque_tmp = self.obs_history_deque.copy()
+        obs_goals_history_tmp = self.obs_goals_history.copy()
+        obs_goals_history_deque_tmp = self.obs_goals_history_deque.copy()
+        
+        # ============
+        # preprocess data
+        # ============
+        if not hasattr(self, "obs_goals_history"):
+            if "contact" in obs_history_tmp:
+                for i in range(obs_history_deque_tmp["contact"].maxlen):
+                    obs_history_deque_tmp["contact"][i][dones] = 0
+        else:
+            if "contact" in obs_goals_history_tmp:
+                for i in range(obs_history_deque_tmp["contact"].maxlen):
+                    obs_goals_history_deque_tmp["contact"][i][dones] = 0
+        if not hasattr(self, "obs_goals_history"):
+            if "contact" in obs_history_deque_tmp:
+                obs_history_deque_tmp["contact"].append(contact_obs)
+                obs_history_tmp["contact"] = torch.cat(
+                    [
+                        obs_history_deque_tmp["contact"][i]
+                        for i in range(obs_history_deque_tmp["contact"].maxlen)
+                    ],
+                    dim=1,
+                )
+        else:
+            if "contact" in obs_goals_history_deque_tmp:
+                obs_goals_history_deque_tmp["contact"].append(
+                    torch.cat((contact_obs, goals), dim=1)
+                )
+                obs_goals_history_tmp["contact"] = torch.cat(
+                    [
+                        obs_goals_history_deque_tmp["contact"][i]
+                        for i in range(
+                            obs_goals_history_deque_tmp["contact"].maxlen
+                        )
+                    ],
+                    dim=1,
+                )
+        
+        # ============
+        # process data
+        # ============
+        if (
+            self._obs_cfg["components"]["contact"].get("obs_history_length", 1)
+            > 1
+        ):
+            if self._obs_cfg["components"]["contact"]["obs_goals_history"]:
+                contact_net_input = obs_goals_history_tmp["contact"]
+            elif self._obs_cfg["components"]["contact"][
+                "obs_history_with_goals"
+            ]:
+                contact_net_input = torch.cat(
+                    (obs_history_tmp["contact"], goals), dim=-1
+                )
+            else:
+                contact_net_input = obs_history_tmp["contact"]
+        else:
+            if self._obs_cfg["components"]["contact"]["obs_with_goals"]:
+                contact_net_input = torch.cat((contact_obs, goals), dim=-1)
+            else:
+                contact_net_input = contact_obs
+
+        # 2. predict contact using contact_net and return
+        return contact_net(contact_net_input)
+
+    def update_obs_with_contact(self, obs, obs_dict, predict_contact):
+        if not self._obs_cfg["components"]["contact"]["obs_list"]:
+            obs["contact"] = torch.empty(
+                self._env.num_envs, 0, device=self.device
+            )
+        else:
+            if self._obs_cfg["components"]["contact"]["lag"]:
+                obs_list = []
+                for obs_name in self._obs_cfg["components"]["contact"][
+                    "obs_list"
+                ]:
+                    if obs_name == "contact_mask":
+                        obs_dict.append(predict_contact)
+                        continue
+                    if obs_name in obs_dict["lagged_obs"]:
+                        obs_list.append(
+                            obs_dict["lagged_obs"]["after_reset"][obs_name]
+                        )
+                    else:
+                        obs_list.append(
+                            obs_dict["non_lagged_obs"]["after_reset"][obs_name]
+                        )
+            else:
+                obs_list = [
+                    predict_contact if obs_name == "contact_mask" else
+                    obs_dict["non_lagged_obs"]["after_reset"][obs_name]
+                    for obs_name in self._obs_cfg["components"]["contact"][
+                        "obs_list"
+                    ]
+                ]
+            obs["contact"] = torch.cat(obs_list, dim=-1)
+        return obs
 
     def init_obs(self):
         stacked_obs = False

@@ -57,7 +57,7 @@ class RunnerBase(ABC):
         self.current_learning_iteration = 0
 
     def init_algo(self, algo_class, networks):
-        self.algo: Ppo = algo_class(
+        self.algo: PpoContact = algo_class(
             networks,
             self.policy_cfg,
             obs_cfg=self.env.obs_cfg,
@@ -230,10 +230,10 @@ class RunnerBase(ABC):
 
     def step(self, inputs, act, set_goals_callback=None, set_goals_callback_args=None):
         actions = act(inputs)
-        return self.env.step(actions, set_goals_callback, set_goals_callback_args)
+        return self.env.step(actions, self.algo.contact_net, set_goals_callback, set_goals_callback_args)
 
     def reset(self, set_goals_callback=None, set_goals_callback_args=None):
-        return self.env.reset(set_goals_callback, set_goals_callback_args)
+        return self.env.reset(self.algo.contact_net, set_goals_callback, set_goals_callback_args)
 
     def log(self, locs: dict, width: int = 80, pad: int = 35):
         if not self.disable_logs:
