@@ -53,7 +53,7 @@ class ConfigPpoContact(ConfigPpo):
                 # when obs_goals_history = False,  obs_history_with_goals = False, and obs_history_length > 1, the input is history(obs)
                 obs_with_goals = False
                 obs_history_length = 20
-                obs_goals_history = True
+                obs_goals_history = False
                 obs_history_with_goals = False
                 lag = True
                 

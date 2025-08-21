@@ -122,27 +122,26 @@ class InputRetrivalEnvWrapper:
             if "contact" in obs_goals_history_tmp:
                 for i in range(obs_history_deque_tmp["contact"].maxlen):
                     obs_goals_history_deque_tmp["contact"][i][dones] = 0
-        if not hasattr(self, "obs_goals_history"):
+        if hasattr(self, "obs_goals_history") and "contact" in obs_goals_history_deque_tmp:
+            obs_goals_history_deque_tmp["contact"].append(
+                torch.cat((contact_obs, goals), dim=1)
+            )
+            obs_goals_history_tmp["contact"] = torch.cat(
+                [
+                    obs_goals_history_deque_tmp["contact"][i]
+                    for i in range(
+                        obs_goals_history_deque_tmp["contact"].maxlen
+                    )
+                ],
+                dim=1,
+            )
+        else:
             if "contact" in obs_history_deque_tmp:
                 obs_history_deque_tmp["contact"].append(contact_obs)
                 obs_history_tmp["contact"] = torch.cat(
                     [
                         obs_history_deque_tmp["contact"][i]
                         for i in range(obs_history_deque_tmp["contact"].maxlen)
-                    ],
-                    dim=1,
-                )
-        else:
-            if "contact" in obs_goals_history_deque_tmp:
-                obs_goals_history_deque_tmp["contact"].append(
-                    torch.cat((contact_obs, goals), dim=1)
-                )
-                obs_goals_history_tmp["contact"] = torch.cat(
-                    [
-                        obs_goals_history_deque_tmp["contact"][i]
-                        for i in range(
-                            obs_goals_history_deque_tmp["contact"].maxlen
-                        )
                     ],
                     dim=1,
                 )
@@ -237,101 +236,49 @@ class InputRetrivalEnvWrapper:
         if hasattr(self, "obs_history"):
             self.get_stacked_obs(dones, goals, obs)
         inputs = {}
-        for obs_type, obs_subtypes in self._obs_types.items():
-            if obs_subtypes:
-                inputs[obs_type] = {}
-                for obs_subtype in obs_subtypes:
-                    if (
-                        self._obs_cfg["components"][obs_type].get(
-                            "obs_history_length", 1
-                        )
-                        > 1
-                    ):
-                        if self._obs_cfg["components"][obs_type]["obs_goals_history"]:
-                            inputs[obs_type][obs_subtype] = self.obs_goals_history[
-                                obs_type
-                            ]
-                        elif self._obs_cfg["components"][obs_type][
-                            "obs_history_with_goals"
-                        ]:
-                            inputs[obs_type][obs_subtype] = torch.cat(
-                                (self.obs_history[obs_type][obs_subtype], goals), dim=-1
-                            )
-                        else:
-                            inputs[obs_type][obs_subtype] = self.obs_history[obs_type][
-                                obs_subtype
-                            ]
-                    else:
-                        if self._obs_cfg["components"][obs_type]["obs_with_goals"]:
-                            inputs[obs_type][obs_subtype] = torch.cat(
-                                (obs[obs_type][obs_subtype], goals), dim=-1
-                            )
-                        else:
-                            inputs[obs_type][obs_subtype] = obs[obs_type][obs_subtype]
-            else:
-                if (
-                    self._obs_cfg["components"][obs_type].get("obs_history_length", 1)
-                    > 1
-                ):
-                    if self._obs_cfg["components"][obs_type]["obs_goals_history"]:
-                        inputs[obs_type] = self.obs_goals_history[obs_type]
-                    elif self._obs_cfg["components"][obs_type][
-                        "obs_history_with_goals"
-                    ]:
-                        inputs[obs_type] = torch.cat(
-                            (self.obs_history[obs_type], goals), dim=-1
-                        )
-                    else:
-                        inputs[obs_type] = self.obs_history[obs_type]
+        for obs_type, _ in self._obs_types.items():
+            if (
+                self._obs_cfg["components"][obs_type].get("obs_history_length", 1)
+                > 1
+            ):
+                if self._obs_cfg["components"][obs_type]["obs_goals_history"]:
+                    inputs[obs_type] = self.obs_goals_history[obs_type]
+                elif self._obs_cfg["components"][obs_type][
+                    "obs_history_with_goals"
+                ]:
+                    inputs[obs_type] = torch.cat(
+                        (self.obs_history[obs_type], goals), dim=-1
+                    )
                 else:
-                    if self._obs_cfg["components"][obs_type]["obs_with_goals"]:
-                        inputs[obs_type] = torch.cat((obs[obs_type], goals), dim=-1)
-                    else:
-                        inputs[obs_type] = obs[obs_type]
+                    inputs[obs_type] = self.obs_history[obs_type]
+            else:
+                if self._obs_cfg["components"][obs_type]["obs_with_goals"]:
+                    inputs[obs_type] = torch.cat((obs[obs_type], goals), dim=-1)
+                else:
+                    inputs[obs_type] = obs[obs_type]
         return inputs
 
     def init_stacked_obs(self):
         self.obs_history_deque = {}
         self.obs_history = {}
-        for obs_type, obs_subtypes in self._obs_types.items():
+        for obs_type, _ in self._obs_types.items():
             if self._obs_cfg["components"][obs_type].get("obs_history_length", 1) > 1:
-                if obs_subtypes:
-                    self.obs_history_deque[obs_type] = {}
-                    self.obs_history[obs_type] = {}
-                    for obs_subtype in obs_subtypes:
-                        self.obs_history_deque[obs_type][obs_subtype] = deque(
-                            maxlen=self.obs_cfg["components"][obs_type][
-                                "obs_history_length"
-                            ]
+                self.obs_history_deque[obs_type] = deque(
+                    maxlen=self.obs_cfg["components"][obs_type][
+                        "obs_history_length"
+                    ]
+                )
+                for _ in range(
+                    self.obs_cfg["components"][obs_type]["obs_history_length"]
+                ):
+                    self.obs_history_deque[obs_type].append(
+                        torch.zeros(
+                            self._env.num_envs,
+                            self.obs_sizes[obs_type],
+                            dtype=torch.float,
+                            device=self.device,
                         )
-                        for _ in range(
-                            self.obs_cfg["components"][obs_type]["obs_history_length"]
-                        ):
-                            self.obs_history_deque[obs_type][obs_subtype].append(
-                                torch.zeros(
-                                    self._env.num_envs,
-                                    self.obs_sizes[obs_type],
-                                    dtype=torch.float,
-                                    device=self.device,
-                                )
-                            )
-                else:
-                    self.obs_history_deque[obs_type] = deque(
-                        maxlen=self.obs_cfg["components"][obs_type][
-                            "obs_history_length"
-                        ]
                     )
-                    for _ in range(
-                        self.obs_cfg["components"][obs_type]["obs_history_length"]
-                    ):
-                        self.obs_history_deque[obs_type].append(
-                            torch.zeros(
-                                self._env.num_envs,
-                                self.obs_sizes[obs_type],
-                                dtype=torch.float,
-                                device=self.device,
-                            )
-                        )
         obs_goals_history = False
         for obs_type in self._obs_types:
             if self._obs_cfg["components"][obs_type].get("obs_history_length", 1) > 1:
@@ -341,7 +288,7 @@ class InputRetrivalEnvWrapper:
         if obs_goals_history:
             self.obs_goals_history_deque = {}
             self.obs_goals_history = {}
-            for obs_type, obs_subtypes in self._obs_types.items():
+            for obs_type, _ in self._obs_types.items():
                 if (
                     self._obs_cfg["components"][obs_type]["obs_goals_history"]
                     and self._obs_cfg["components"][obs_type].get(
@@ -349,205 +296,88 @@ class InputRetrivalEnvWrapper:
                     )
                     > 1
                 ):
-                    if obs_subtypes:
-                        self.obs_goals_history_deque[obs_type] = {}
-                        self.obs_goals_history[obs_type] = {}
-                        for obs_subtype in obs_subtypes:
-                            self.obs_goals_history_deque[obs_type][obs_subtype] = deque(
-                                maxlen=self.obs_cfg["components"][obs_type][
-                                    "obs_history_length"
-                                ]
+                    self.obs_goals_history_deque[obs_type] = deque(
+                        maxlen=self.obs_cfg["components"][obs_type][
+                            "obs_history_length"
+                        ]
+                    )
+                    for _ in range(
+                        self.obs_cfg["components"][obs_type]["obs_history_length"]
+                    ):
+                        self.obs_goals_history_deque[obs_type].append(
+                            torch.zeros(
+                                self._env.num_envs,
+                                self.obs_sizes[obs_type]
+                                + self.goal_sizes[obs_type],
+                                dtype=torch.float,
+                                device=self.device,
                             )
-                            for _ in range(
-                                self.obs_cfg["components"][obs_type][
-                                    "obs_history_length"
-                                ]
-                            ):
-                                self.obs_goals_history_deque[obs_type][
-                                    obs_subtype
-                                ].append(
-                                    torch.zeros(
-                                        self._env.num_envs,
-                                        self.obs_sizes[obs_type],
-                                        dtype=torch.float,
-                                        device=self.device,
-                                    )
-                                )
-                    else:
-                        self.obs_goals_history_deque[obs_type] = deque(
-                            maxlen=self.obs_cfg["components"][obs_type][
-                                "obs_history_length"
-                            ]
                         )
-                        for _ in range(
-                            self.obs_cfg["components"][obs_type]["obs_history_length"]
-                        ):
-                            self.obs_goals_history_deque[obs_type].append(
-                                torch.zeros(
-                                    self._env.num_envs,
-                                    self.obs_sizes[obs_type]
-                                    + self.goal_sizes[obs_type],
-                                    dtype=torch.float,
-                                    device=self.device,
-                                )
-                            )
 
     def get_stacked_obs(self, dones, goals, obs):
         self.reset_stacked_obs(dones)
-        if not hasattr(self, "obs_goals_history"):
-            for obs_type, obs_subtypes in self._obs_types.items():
-                if obs_type in self.obs_history_deque:
-                    if obs_subtypes:
-                        for obs_subtype in obs_subtypes:
-                            self.obs_history_deque[obs_type][obs_subtype].append(
-                                obs[obs_type]
+        for obs_type, _ in self._obs_types.items():
+            if obs_type in self.obs_history_deque:
+                    self.obs_history_deque[obs_type].append(obs[obs_type])
+                    self.obs_history[obs_type] = torch.cat(
+                        [
+                            self.obs_history_deque[obs_type][i]
+                            for i in range(self.obs_history_deque[obs_type].maxlen)
+                        ],
+                        dim=1,
+                    )
+            if obs_type in self.obs_goals_history_deque:
+                    self.obs_goals_history_deque[obs_type].append(
+                        torch.cat((obs[obs_type], goals), dim=1)
+                    )
+                    self.obs_goals_history[obs_type] = torch.cat(
+                        [
+                            self.obs_goals_history_deque[obs_type][i]
+                            for i in range(
+                                self.obs_goals_history_deque[obs_type].maxlen
                             )
-                            self.obs_history[obs_type][obs_subtype] = torch.cat(
-                                [
-                                    self.obs_history_deque[obs_type][obs_subtype][i]
-                                    for i in range(
-                                        self.obs_history_deque[obs_type][
-                                            obs_subtype
-                                        ].maxlen
-                                    )
-                                ],
-                                dim=1,
-                            )
-                    else:
-                        self.obs_history_deque[obs_type].append(obs[obs_type])
-                        self.obs_history[obs_type] = torch.cat(
-                            [
-                                self.obs_history_deque[obs_type][i]
-                                for i in range(self.obs_history_deque[obs_type].maxlen)
-                            ],
-                            dim=1,
-                        )
-        else:
-            for obs_type, obs_subtypes in self._obs_types.items():
-                if obs_type in self.obs_goals_history_deque:
-                    if obs_subtypes:
-                        for obs_subtype in obs_subtypes:
-                            self.obs_goals_history_deque[obs_type][obs_subtype].append(
-                                torch.cat(obs[obs_type], goals)
-                            )
-                            self.obs_goals_history[obs_type][obs_subtype] = torch.cat(
-                                [
-                                    self.obs_goals_history_deque[obs_type][obs_subtype][
-                                        i
-                                    ]
-                                    for i in range(
-                                        self.obs_goals_history_deque[obs_type][
-                                            obs_subtype
-                                        ].maxlen
-                                    )
-                                ],
-                                dim=1,
-                            )
-                    else:
-                        self.obs_goals_history_deque[obs_type].append(
-                            torch.cat((obs[obs_type], goals), dim=1)
-                        )
-                        self.obs_goals_history[obs_type] = torch.cat(
-                            [
-                                self.obs_goals_history_deque[obs_type][i]
-                                for i in range(
-                                    self.obs_goals_history_deque[obs_type].maxlen
-                                )
-                            ],
-                            dim=1,
-                        )
+                        ],
+                        dim=1,
+                    )
 
     def reset_stacked_obs(self, dones):
-        if not hasattr(self, "obs_goals_history"):
-            for obs_type, obs_subtypes in self._obs_types.items():
-                if obs_type in self.obs_history:
-                    if obs_subtypes:
-                        for obs_subtype in obs_subtypes:
-                            for i in range(
-                                self.obs_history_deque[obs_type][obs_subtype].maxlen
-                            ):
-                                self.obs_history_deque[obs_type][obs_subtype][i][
-                                    dones
-                                ] = 0
-                    else:
-                        for i in range(self.obs_history_deque[obs_type].maxlen):
-                            self.obs_history_deque[obs_type][i][dones] = 0
-        else:
-            for obs_type, obs_subtypes in self._obs_types.items():
-                if obs_type in self.obs_goals_history:
-                    if obs_subtypes:
-                        for obs_subtype in obs_subtypes:
-                            for i in range(
-                                self.obs_history_deque[obs_type][obs_subtype].maxlen
-                            ):
-                                self.obs_goals_history_deque[obs_type][obs_subtype][i][
-                                    dones
-                                ] = 0
-                    else:
-                        for i in range(self.obs_history_deque[obs_type].maxlen):
-                            self.obs_goals_history_deque[obs_type][i][dones] = 0
+        for obs_type, _ in self._obs_types.items():
+            if obs_type in self.obs_history_deque:
+                    for i in range(self.obs_history_deque[obs_type].maxlen):
+                        self.obs_history_deque[obs_type][i][dones] = 0
+            if obs_type in self.obs_goals_history_deque:
+                for i in range(self.obs_history_deque[obs_type].maxlen):
+                    self.obs_goals_history_deque[obs_type][i][dones] = 0
 
     def retrieve_obs(self, obs_dict):
         obs = {}
-        for obs_type, obs_subtypes in self._obs_types.items():
-            if obs_subtypes:
-                obs[obs_type] = {}
-                for obs_subtype in obs_subtypes:
-                    if not self._obs_cfg["components"][obs_type]["obs_list"]:
-                        obs[obs_type][obs_subtype] = torch.empty(
-                            self._env.num_envs, 0, device=self.device
-                        )
-                    else:
-                        if self._obs_cfg["components"][obs_type]["lag"]:
-                            obs_list = []
-                            for obs_name in self._obs_cfg["components"][obs_type][
-                                "obs_list"
-                            ]:
-                                if obs_name in obs_dict["lagged_obs"][obs_subtype]:
-                                    obs_list.append(
-                                        obs_dict["lagged_obs"][obs_subtype][obs_name]
-                                    )
-                                else:
-                                    obs_list.append(
-                                        obs_dict["non_lagged_obs"][obs_subtype][
-                                            obs_name
-                                        ]
-                                    )
-                        else:
-                            obs_list = [
-                                obs_dict["non_lagged_obs"][obs_subtype][obs_name]
-                                for obs_name in self._obs_cfg["components"][obs_type][
-                                    "obs_list"
-                                ]
-                            ]
-                        obs[obs_type][obs_subtype] = torch.cat(obs_list, dim=-1)
+        for obs_type, _ in self._obs_types.items():
+            if not self._obs_cfg["components"][obs_type]["obs_list"]:
+                obs[obs_type] = torch.empty(
+                    self._env.num_envs, 0, device=self.device
+                )
             else:
-                if not self._obs_cfg["components"][obs_type]["obs_list"]:
-                    obs[obs_type] = torch.empty(
-                        self._env.num_envs, 0, device=self.device
-                    )
+                if self._obs_cfg["components"][obs_type]["lag"]:
+                    obs_list = []
+                    for obs_name in self._obs_cfg["components"][obs_type][
+                        "obs_list"
+                    ]:
+                        if obs_name in obs_dict["lagged_obs"]:
+                            obs_list.append(
+                                obs_dict["lagged_obs"]["after_reset"][obs_name]
+                            )
+                        else:
+                            obs_list.append(
+                                obs_dict["non_lagged_obs"]["after_reset"][obs_name]
+                            )
                 else:
-                    if self._obs_cfg["components"][obs_type]["lag"]:
-                        obs_list = []
+                    obs_list = [
+                        obs_dict["non_lagged_obs"]["after_reset"][obs_name]
                         for obs_name in self._obs_cfg["components"][obs_type][
                             "obs_list"
-                        ]:
-                            if obs_name in obs_dict["lagged_obs"]:
-                                obs_list.append(
-                                    obs_dict["lagged_obs"]["after_reset"][obs_name]
-                                )
-                            else:
-                                obs_list.append(
-                                    obs_dict["non_lagged_obs"]["after_reset"][obs_name]
-                                )
-                    else:
-                        obs_list = [
-                            obs_dict["non_lagged_obs"]["after_reset"][obs_name]
-                            for obs_name in self._obs_cfg["components"][obs_type][
-                                "obs_list"
-                            ]
                         ]
-                    obs[obs_type] = torch.cat(obs_list, dim=-1)
+                    ]
+                obs[obs_type] = torch.cat(obs_list, dim=-1)
         return obs
 
     def retrieve_goals(self, goal_dict):

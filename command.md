@@ -12,3 +12,7 @@ python engineai_rl_workspace/scripts/train.py --exp_name dora2_rough_ppo --headl
 ```bash
 python engineai_rl_workspace/scripts/play.py --exp_name dora2_rough_ppo --video --num_envs 1 --headless --record_length 1000 --test_length 1500 --load_run <run_name>
 ```
+
+```bash
+python engineai_rl_workspace/scripts/play.py --exp_name dora2_shoes_rough_ppo_contact --video --num_envs 1 --headless --record_length 1500 --test_length 1500 --load_run <run_name>
+```
