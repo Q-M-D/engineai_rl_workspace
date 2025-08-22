@@ -12,4 +12,4 @@ from .convert_between_py_and_dict import (
     get_dict_from_cfg_before_modification,
 )
 from .tester_registry import tester_registry
-from .convert_policy import convert_nn_to_onnx, convert_onnx_to_mnn
+from .convert_policy import convert_nn_to_onnx, convert_onnx_to_mnn, export_policy_as_jit_normal, convert_nn_to_onnx_normal

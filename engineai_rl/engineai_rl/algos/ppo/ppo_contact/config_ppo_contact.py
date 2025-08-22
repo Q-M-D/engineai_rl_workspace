@@ -5,14 +5,14 @@ class ConfigPpoContact(ConfigPpo):
     class networks(ConfigPpo.networks):
         # contact network is used during training but not optimized with PPO
         training = ["actor", "critic", "contact"] # not use in runner_base.py:82
-        inference = ["actor"]
+        inference = ["actor", "contact"]
         
         class actor:
             class_name = "Mlp"
             input_infos = {"num_input_dim": "actor"}
             output_infos = {"num_output_dim": "action"}
-            forward_inputs = ["obs", "contact_estimation"]
-            forward_input_dims_infos = {"obs": "num_input_dim", "contact_estimation": "num_contact_dim"}
+            forward_inputs = ["obs"]
+            forward_input_dims_infos = {"obs": "num_input_dim"}
             hidden_dims = [512, 256, 128]
             activation = "elu"
         
@@ -27,6 +27,8 @@ class ConfigPpoContact(ConfigPpo):
             class_name = "AttentionNetwork"
             input_infos = {"num_input_dim": "contact"}
             output_infos = {"num_output_dim": 2}
+            forward_inputs = ["obs"]
+            forward_input_dims_infos = {"obs": "num_input_dim"}
             num_heads = 1
             obs_history_length = 20 # This is the length of the history for contact observations
 

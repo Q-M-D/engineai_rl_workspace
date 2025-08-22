@@ -9,6 +9,8 @@ from engineai_rl_workspace.utils import (
     generate_cfg_files_from_json,
     convert_nn_to_onnx,
     convert_onnx_to_mnn,
+    export_policy_as_jit_normal,
+    convert_nn_to_onnx_normal
 )
 from engineai_rl_workspace.utils.process_resume_files import (
     get_log_root_and_log_dir,
@@ -261,22 +263,36 @@ async def export_policy(args):
     network_list = [
         inference_network for inference_network in inference_networks.values()
     ]
-    combined_networks = CombinedNetworks(network_list)
-
-    convert_nn_to_onnx(
-        combined_networks, path, args.exp_name + "_" + args.load_run + "_policy"
-    )
-
-    convert_onnx_to_mnn(
-        os.path.join(
+    for network in network_list:
+        model = network["network"].eval()
+        convert_nn_to_onnx_normal(
+            network,
             path,
-            args.exp_name + "_" + args.load_run + "_policy" + ".onnx",
-        ),
-        os.path.join(
+            args.exp_name + "_" + load_run + "_" + network["network"].__class__.__name__,
+        )
+        export_policy_as_jit_normal(
+            model,
             path,
-            args.exp_name + "_" + args.load_run + "_policy" + ".mnn",
-        ),
-    )
+            args.exp_name + "_" + load_run + "_" + network["network"].__class__.__name__ + ".pt"
+        )
+        
+        
+    # combined_networks = CombinedNetworks(network_list)
+
+    # convert_nn_to_onnx(
+    #     combined_networks, path, args.exp_name + "_" + args.load_run + "_policy"
+    # )
+
+    # convert_onnx_to_mnn(
+    #     os.path.join(
+    #         path,
+    #         args.exp_name + "_" + args.load_run + "_policy" + ".onnx",
+    #     ),
+    #     os.path.join(
+    #         path,
+    #         args.exp_name + "_" + args.load_run + "_policy" + ".mnn",
+    #     ),
+    # )
 
 
 if __name__ == "__main__":
