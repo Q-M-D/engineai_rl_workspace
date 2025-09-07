@@ -55,7 +55,7 @@ class ConfigN2Rough(ConfigBipedRobot):
         terrain_proportions = [0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1]
 
     class init_state(ConfigBipedRobot.init_state):
-        pos = [0.0, 0.0, 0.72]
+        pos = [0.0, 0.0, 0.73]
 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             "L_arm_shoulder_pitch_joint": 0.0,
@@ -303,7 +303,7 @@ class ConfigN2Rough(ConfigBipedRobot):
 
     class rewards(ConfigBipedRobot.rewards):
         class params(ConfigBipedRobot.rewards.params):
-            base_height_target = 0.7
+            base_height_target = 0.65
             max_contact_force = 500.0
             tracking_sigma = 5
             target_joint_pos_scale = 0.26
