@@ -9,16 +9,16 @@ class ConfigN2Rough(ConfigBipedRobot):
             "L_arm_shoulder_roll_joint",
             "L_arm_shoulder_yaw_joint",
             "L_arm_elbow_joint",
-            "R_arm_shoulder_pitch_joint",
-            "R_arm_shoulder_roll_joint",
-            "R_arm_shoulder_yaw_joint",
-            "R_arm_elbow_joint",
-            
             "L_leg_hip_yaw_joint",
             "L_leg_hip_roll_joint",
             "L_leg_hip_pitch_joint",
             "L_leg_knee_joint",
             "L_leg_ankle_joint",
+            
+            "R_arm_shoulder_pitch_joint",
+            "R_arm_shoulder_roll_joint",
+            "R_arm_shoulder_yaw_joint",
+            "R_arm_elbow_joint",
             "R_leg_hip_yaw_joint",
             "R_leg_hip_roll_joint",
             "R_leg_hip_pitch_joint",
@@ -55,23 +55,22 @@ class ConfigN2Rough(ConfigBipedRobot):
         terrain_proportions = [0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1]
 
     class init_state(ConfigBipedRobot.init_state):
-        pos = [0.0, 0.0, 0.73]
+        pos = [0.0, 0.0, 0.68]
 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             "L_arm_shoulder_pitch_joint": 0.0,
             "L_arm_shoulder_roll_joint": 0.3,
             "L_arm_shoulder_yaw_joint": 0.0,
             "L_arm_elbow_joint": 0.0,
-            "R_arm_shoulder_pitch_joint": 0.0,
-            "R_arm_shoulder_roll_joint": -0.3,
-            "R_arm_shoulder_yaw_joint": 0.0,
-            "R_arm_elbow_joint": 0.0,
-
             "L_leg_hip_yaw_joint": 0.0,
             "L_leg_hip_roll_joint": 0.0,
             "L_leg_hip_pitch_joint": 0.0,
             "L_leg_knee_joint": 0.0,
             "L_leg_ankle_joint": 0.0,
+            "R_arm_shoulder_pitch_joint": 0.0,
+            "R_arm_shoulder_roll_joint": -0.3,
+            "R_arm_shoulder_yaw_joint": 0.0,
+            "R_arm_elbow_joint": 0.0,
             "R_leg_hip_yaw_joint": 0.0,
             "R_leg_hip_roll_joint": 0.0,
             "R_leg_hip_pitch_joint": 0.0,
@@ -145,50 +144,24 @@ class ConfigN2Rough(ConfigBipedRobot):
             randomize_joint_friction_each_joint = False
             joint_friction_multi_range = [0.01, 1.15]
             joint_friction_multi_range_each_joint = {
-                "L_arm_shoulder_pitch_joint": [0.0, 0.01],
-                "L_arm_shoulder_roll_joint": [0.0, 0.01],
-                "L_arm_shoulder_yaw_joint": [0.0, 0.01],
-                "L_arm_elbow_joint": [0.0, 0.01],
-                "R_arm_shoulder_pitch_joint": [0.0, 0.01],
-                "R_arm_shoulder_roll_joint": [0.0, 0.01],
-                "R_arm_shoulder_yaw_joint": [0.0, 0.01],
-                "R_arm_elbow_joint": [0.0, 0.01],
+                "shoulder": [0.01, 1.15],
+                "elbow": [0.01, 1.15],
 
-                "L_leg_hip_yaw_joint": [0.01, 1.15],
-                "L_leg_hip_roll_joint": [0.01, 1.15],
-                "L_leg_hip_pitch_joint": [0.01, 1.15],
-                "L_leg_knee_joint": [0.01, 1.15],
-                "L_leg_ankle_joint": [0.5, 1.3],
-                "R_leg_hip_yaw_joint": [0.01, 1.15],
-                "R_leg_hip_roll_joint": [0.01, 1.15],
-                "R_leg_hip_pitch_joint": [0.01, 1.15],
-                "R_leg_knee_joint": [0.01, 1.15],
-                "R_leg_ankle_joint": [0.5, 1.3],
+                "hip": [0.01, 1.15],
+                "knee": [0.01, 1.15],
+                "ankle": [0.5, 1.3],
             }
 
             randomize_joint_armature = True
             randomize_joint_armature_each_joint = True
             joint_armature_multi_range = [0.27, 2]
             joint_armature_multi_range_each_joint = {
-                "L_arm_shoulder_pitch_joint": [0.1, 0.5],
-                "L_arm_shoulder_roll_joint": [0.1, 0.5],
-                "L_arm_shoulder_yaw_joint": [0.1, 0.5],
-                "L_arm_elbow_joint": [0.1, 0.5],
-                "R_arm_shoulder_pitch_joint": [0.1, 0.5],
-                "R_arm_shoulder_roll_joint": [0.1, 0.5],
-                "R_arm_shoulder_yaw_joint": [0.1, 0.5],
-                "R_arm_elbow_joint": [0.1, 0.5],
+                "L_arm": [0.27, 2],
+                "R_arm": [0.27, 2],
 
-                "L_leg_hip_yaw_joint": [0.27, 2],
-                "L_leg_hip_roll_joint": [0.27, 2],
-                "L_leg_hip_pitch_joint": [0.27, 2],
-                "L_leg_knee_joint": [0.27, 2],
-                "L_leg_ankle_joint": [0.28, 2],
-                "R_leg_hip_yaw_joint": [0.27, 2],
-                "R_leg_hip_roll_joint": [0.27, 2],
-                "R_leg_hip_pitch_joint": [0.27, 2],
-                "R_leg_knee_joint": [0.27, 2],
-                "R_leg_ankle_joint": [0.28, 2],
+                "hip": [0.27, 2],
+                "knee": [0.27, 2],
+                "ankle": [0.27, 2],
             }
 
             randomize_coulomb_friction = False
@@ -226,7 +199,27 @@ class ConfigN2Rough(ConfigBipedRobot):
         foot_name = "ankle_link"
         knee_name = "knee_link"
 
-        terminate_after_contacts_on = ["base_link", "l_leg_knee_link", "r_leg_knee_link"]
+        terminate_after_contacts_on = [
+            "base_link",
+            "l_arm_shoulder_pitch_Link",
+            "l_arm_shoulder_roll_Link",
+            "l_arm_shoulder_yaw_Link",
+            "l_arm_elbow_Link",
+            "l_arm_hand_Link",
+            "r_arm_shoulder_pitch_Link",
+            "r_arm_shoulder_roll_Link",
+            "r_arm_shoulder_yaw_Link",
+            "r_arm_elbow_Link",
+            "r_arm_hand_Link",
+            "l_leg_hip_yaw_link",
+            "l_leg_hip_roll_link",
+            "l_leg_hip_pitch_link",
+            "l_leg_knee_link",
+            "r_leg_hip_yaw_link",
+            "r_leg_hip_roll_link",
+            "r_leg_hip_pitch_link",
+            "r_leg_knee_link",
+            ]
         penalize_contacts_on = ["base_link"]
         flip_visual_attachments = False
         replace_cylinder_with_capsule = False
@@ -254,25 +247,25 @@ class ConfigN2Rough(ConfigBipedRobot):
         }
         joint_friction = {
             # Arm joints
-            "L_arm_shoulder_pitch_joint": 0.05,
-            "L_arm_shoulder_roll_joint": 0.05,
-            "L_arm_shoulder_yaw_joint": 0.05,
-            "L_arm_elbow_joint": 0.05,
-            "R_arm_shoulder_pitch_joint": 0.05,
-            "R_arm_shoulder_roll_joint": 0.05,
-            "R_arm_shoulder_yaw_joint": 0.05,
-            "R_arm_elbow_joint": 0.05,
+            "L_arm_shoulder_pitch_joint": 0.0,
+            "L_arm_shoulder_roll_joint": 0.0,
+            "L_arm_shoulder_yaw_joint": 0.0,
+            "L_arm_elbow_joint": 0.0,
+            "R_arm_shoulder_pitch_joint": 0.0,
+            "R_arm_shoulder_roll_joint": 0.0,
+            "R_arm_shoulder_yaw_joint": 0.0,
+            "R_arm_elbow_joint": 0.0,
             # Leg joints
-            "L_leg_hip_yaw_joint": 0.01,
-            "L_leg_hip_roll_joint": 0.01,
-            "L_leg_hip_pitch_joint": 0.01,
-            "L_leg_knee_joint": 0.01,
-            "L_leg_ankle_joint": 0.01,
-            "R_leg_hip_yaw_joint": 0.01,
-            "R_leg_hip_roll_joint": 0.01,
-            "R_leg_hip_pitch_joint": 0.01,
-            "R_leg_knee_joint": 0.01,
-            "R_leg_ankle_joint": 0.01,
+            "L_leg_hip_yaw_joint": 0.0,
+            "L_leg_hip_roll_joint": 0.0,
+            "L_leg_hip_pitch_joint": 0.0,
+            "L_leg_knee_joint": 0.0,
+            "L_leg_ankle_joint": 0.0,
+            "R_leg_hip_yaw_joint": 0.0,
+            "R_leg_hip_roll_joint": 0.0,
+            "R_leg_hip_pitch_joint": 0.0,
+            "R_leg_knee_joint": 0.0,
+            "R_leg_ankle_joint": 0.0,
         }
 
     class commands(ConfigBipedRobot.commands):
@@ -306,7 +299,7 @@ class ConfigN2Rough(ConfigBipedRobot):
             base_height_target = 0.65
             max_contact_force = 500.0
             tracking_sigma = 5
-            target_joint_pos_scale = 0.26
+            target_joint_pos_scale = 0.5
             target_feet_height = 0.1
             soft_dof_torque_limit_multi = {"joint": 0.9}
 
