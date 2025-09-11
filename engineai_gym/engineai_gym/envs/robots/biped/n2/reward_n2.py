@@ -13,7 +13,7 @@ class RewardN2(RewardsBiped):
         on penalizing deviation in yaw and roll directions. Excludes yaw and roll from the main penalty.
         """
         joint_diff = self.env.dof_pos - self.env.default_dof_pos
-        left_yaw_roll = joint_diff[:, 8:10]
+        left_yaw_roll = joint_diff[:, 4:6]
         right_yaw_roll = joint_diff[:,13:15]
         yaw_roll = torch.norm(left_yaw_roll, dim=1) + torch.norm(right_yaw_roll, dim=1)
         yaw_roll = torch.clamp(yaw_roll - 0.1, 0, 50)

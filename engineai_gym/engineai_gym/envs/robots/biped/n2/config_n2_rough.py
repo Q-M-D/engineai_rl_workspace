@@ -48,6 +48,7 @@ class ConfigN2Rough(ConfigBipedRobot):
         episode_length_s = 24
 
     class terrain(ConfigBipedRobot.terrain):
+        mesh_type = "plane"
         static_friction = 0.6
         dynamic_friction = 0.6
         num_rows = 20  # number of terrain rows (levels)
@@ -55,7 +56,7 @@ class ConfigN2Rough(ConfigBipedRobot):
         terrain_proportions = [0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1]
 
     class init_state(ConfigBipedRobot.init_state):
-        pos = [0.0, 0.0, 0.68]
+        pos = [0.0, 0.0, 0.72]
 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             "L_arm_shoulder_pitch_joint": 0.0,
@@ -64,18 +65,18 @@ class ConfigN2Rough(ConfigBipedRobot):
             "L_arm_elbow_joint": 0.0,
             "L_leg_hip_yaw_joint": 0.0,
             "L_leg_hip_roll_joint": 0.0,
-            "L_leg_hip_pitch_joint": 0.0,
-            "L_leg_knee_joint": 0.0,
-            "L_leg_ankle_joint": 0.0,
+            "L_leg_hip_pitch_joint": -0.2,
+            "L_leg_knee_joint": 0.4,
+            "L_leg_ankle_joint": -0.2,
             "R_arm_shoulder_pitch_joint": 0.0,
             "R_arm_shoulder_roll_joint": -0.3,
             "R_arm_shoulder_yaw_joint": 0.0,
             "R_arm_elbow_joint": 0.0,
             "R_leg_hip_yaw_joint": 0.0,
             "R_leg_hip_roll_joint": 0.0,
-            "R_leg_hip_pitch_joint": 0.0,
-            "R_leg_knee_joint": 0.0,
-            "R_leg_ankle_joint": 0.0,
+            "R_leg_hip_pitch_joint": -0.2,
+            "R_leg_knee_joint": 0.4,
+            "R_leg_ankle_joint": -0.2,
         }
 
     class control(ConfigBipedRobot.control):
@@ -201,24 +202,9 @@ class ConfigN2Rough(ConfigBipedRobot):
 
         terminate_after_contacts_on = [
             "base_link",
-            "l_arm_shoulder_pitch_Link",
-            "l_arm_shoulder_roll_Link",
-            "l_arm_shoulder_yaw_Link",
-            "l_arm_elbow_Link",
-            "l_arm_hand_Link",
-            "r_arm_shoulder_pitch_Link",
-            "r_arm_shoulder_roll_Link",
-            "r_arm_shoulder_yaw_Link",
-            "r_arm_elbow_Link",
-            "r_arm_hand_Link",
-            "l_leg_hip_yaw_link",
-            "l_leg_hip_roll_link",
-            "l_leg_hip_pitch_link",
-            "l_leg_knee_link",
-            "r_leg_hip_yaw_link",
-            "r_leg_hip_roll_link",
-            "r_leg_hip_pitch_link",
-            "r_leg_knee_link",
+            "arm",
+            "hip",
+            "knee",
             ]
         penalize_contacts_on = ["base_link"]
         flip_visual_attachments = False

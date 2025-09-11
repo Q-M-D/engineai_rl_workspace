@@ -16,10 +16,10 @@ class N2(BipedRobot):
         scale_2 = 2 * scale_1
         
         # left swing
-        sin_pos_l[sin_pos_l < 0] = 0
-        self.ref_dof_pos[:, 10] = -sin_pos_l * scale_1
-        self.ref_dof_pos[:, 11] = sin_pos_l * scale_2
-        self.ref_dof_pos[:, 12] = -sin_pos_l * scale_1
+        sin_pos_l[sin_pos_l > 0] = 0
+        self.ref_dof_pos[:, 6] = sin_pos_l * scale_1
+        self.ref_dof_pos[:, 7] = -sin_pos_l * scale_2
+        self.ref_dof_pos[:, 8] = sin_pos_l * scale_1
         # right
         sin_pos_r[sin_pos_r < 0] = 0
         self.ref_dof_pos[:, 15] = -sin_pos_r * scale_1
